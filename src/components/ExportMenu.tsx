@@ -52,10 +52,10 @@ export function ExportMenu({ content }: ExportMenuProps) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          title="Save note as… (Ctrl/⌘+S saves Markdown)"
+          title="Download note as a file"
           aria-label="Save note as a file"
           aria-disabled={empty || undefined}
-          className="pointer-events-auto grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:opacity-40 aria-disabled:hover:bg-transparent aria-disabled:hover:text-muted-foreground"
+          className="pointer-events-auto pad-export grid shrink-0 place-items-center rounded-md text-muted-foreground outline-none transition-colors duration-150 hover:bg-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:opacity-40 aria-disabled:hover:bg-transparent aria-disabled:hover:text-muted-foreground"
         >
           <Icon icon={Download04Icon} />
         </button>

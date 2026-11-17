@@ -14,11 +14,15 @@ import {
   type MouseEvent,
   type RefObject,
 } from "react";
+import { Loading03Icon } from "@hugeicons/core-free-icons";
 import { formatSize } from "@/components/format";
-import { ExportMenu, saveNoteAs } from "@/components/ExportMenu";
+import { ExportMenu } from "@/components/ExportMenu";
 import { splitNote } from "@/components/exportNote";
+import { Icon } from "@/components/Icon";
+import { SaveButton, useSaveAction } from "@/components/SaveButton";
+import "./WritingPad.css";
 import { cn } from "@/lib/utils";
-import type { NoteStore, SaveState } from "@/lib/types";
+import type { NoteStore } from "@/lib/types";
 import type { NoteEditorHandle } from "@/components/editor/NoteEditor";
 
 // The editor is CodeMirror. It loads on the client only, after the pad is on screen. The skeleton is one empty
@@ -28,13 +32,31 @@ const NoteEditor = dynamic(() => import("@/components/editor/NoteEditor").then((
   loading: () => <div aria-hidden="true" className="h-7 min-w-0 flex-1" />,
 });
 
-const saveStatus: Record<SaveState, { label: string; dot: string }> = {
-  idle: { label: "Ready", dot: "bg-muted-foreground/60" },
-  saving: { label: "Saving…", dot: "bg-warning" },
-  saved: { label: "Saved", dot: "bg-success" },
-  offline: { label: "Offline", dot: "bg-muted-foreground" },
-  error: { label: "Not saved", dot: "bg-destructive" },
-};
+interface StatusView {
+  label: string;
+  dot?: string;
+  spinning?: boolean;
+}
+
+/**
+ * What the bottom strip says. Guest: the note lives on this device. Account: the save state. An empty note says
+ * nothing.
+ */
+function statusFor(store: Pick<NoteStore, "mode" | "saveState">, empty: boolean): StatusView | null {
+  if (store.mode === "guest") return empty ? null : { label: "On this device", dot: "bg-muted-foreground/60" };
+  switch (store.saveState) {
+    case "saving":
+      return { label: "Saving…", spinning: true };
+    case "unsaved":
+      return { label: "Unsaved changes", dot: "bg-warning" };
+    case "offline":
+      return { label: "Offline — not saved", dot: "bg-warning" };
+    case "error":
+      return { label: "Couldn't save", dot: "bg-destructive" };
+    default:
+      return empty ? null : { label: "All changes saved", dot: "bg-success" };
+  }
+}
 
 /** Joins the two fields back into the stored string. An empty note stays an empty string. */
 function joinNote(title: string, body: string): string {
@@ -62,11 +84,14 @@ export function WritingPad({ store, handleRef }: WritingPadProps) {
   const pendingBodyCaret = useRef<number | null>(null);
   // A focus request ran before the editor finished loading. The editor takes it when it is ready.
   const pendingEditorFocus = useRef<"start" | "end" | null>(null);
+  // One save path for the pad's button and Cmd/Ctrl+S. Its sign-in prompt is rendered once, below.
+  const save = useSaveAction(store);
 
   const content = store.activeNote?.content ?? "";
   const { title, body } = useMemo(() => splitNote(content), [content]);
   const size = useMemo(() => formatSize(content), [content]);
-  const status = saveStatus[store.saveState];
+  const empty = content.trim() === "";
+  const status = statusFor(store, empty);
   // Signed in with notes but none open yet: the note is still loading, so typing would be lost.
   const locked = store.mode === "account" && !store.activeNote && store.notes.length > 0;
   const readOnly = !store.ready || locked;
@@ -171,95 +196,118 @@ export function WritingPad({ store, handleRef }: WritingPadProps) {
     pendingBodyCaret.current = restOfPaste.length;
   }
 
-  // Cmd/Ctrl+S inside the pad saves the note as Markdown, and the browser's save dialog stays shut.
+  // Cmd/Ctrl+S saves the note to the account (or opens the sign-in prompt). It never downloads a file, and the
+  // browser's save dialog stays shut.
   function handlePadKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.nativeEvent.isComposing) return;
     if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey) return;
     if (event.key.toLowerCase() !== "s") return;
     event.preventDefault();
-    saveNoteAs(content, "md");
+    void save.run();
   }
 
   // Clicks on the title keep their own caret. Clicks in the pad outside the text (the empty space below it, the
-  // margins, the counter) put the caret at the end of the body.
+  // margins, the strip) put the caret at the end of the body. Clicks in portals (the sign-in prompt, the export
+  // menu) are not in the pad's DOM, so they are ignored here.
   function focusPad(event: MouseEvent<HTMLDivElement>) {
     const target = event.target;
+    if (!(target instanceof Node) || !event.currentTarget.contains(target)) return;
     if (target instanceof Element && target.closest(".cm-editor, input, button")) return;
     focusEditorEnd();
   }
 
   return (
-    // The pad is the scroll container: its border, radius and shadow scroll with it, and the counter is a sticky
-    // footer, so nothing sits in an inner box with padding of its own.
+    // The pad is a fixed sheet: border, radius and shadow stay put. Only the ruled sheet scrolls, so the bottom strip
+    // is never over the text and the caret can't hide behind it.
     <div
       onClick={focusPad}
       onKeyDown={handlePadKeyDown}
-      onScroll={() => editorRef.current?.refresh()}
-      className="relative flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain rounded-[16px] border border-border bg-pad shadow-pad"
+      className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden bg-pad"
     >
-      {/* One ruled sheet for the title and the body: same 28px grid, same insets, so no rule breaks at the boundary. */}
-      {/* Fills the pad. Its min-height is the pad less the counter strip, so the rules run to the strip and stop. */}
       <div
-        className="notepad relative flex min-h-[calc(100%-2rem)] shrink-0 flex-col pt-3 pr-4 md:pr-6"
-        style={{ paddingLeft: `calc(${MARGIN_RULE} + 12px)` }}
+        onScroll={() => editorRef.current?.refresh()}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
       >
+        {/* One ruled sheet for the title and the body: same 28px grid, same insets, so no rule breaks at the boundary. */}
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 w-px bg-border"
-          style={{ left: MARGIN_RULE }}
-        />
+          className="notepad relative flex min-h-full flex-col pt-3 pr-4 pad-gutter"
+          style={{ paddingLeft: `calc(${MARGIN_RULE} + 12px)` }}
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 w-px bg-border"
+            style={{ left: MARGIN_RULE }}
+          />
 
-        {/* Title row: two 28px rules tall. The title text sits on the second rule. */}
-        <div className="relative h-14 shrink-0">
-          <input
-            ref={titleRef}
-            type="text"
-            aria-label="Note title"
-            placeholder={store.ready ? "Untitled note" : undefined}
-            autoComplete="off"
-            spellCheck
-            value={title}
+          {/* Title row: two 28px rules tall. The title text sits on the second rule. On md+ the Save button sits at its right. */}
+          <div className="relative h-14 shrink-0">
+            <input
+              ref={titleRef}
+              type="text"
+              aria-label="Note title"
+              placeholder={store.ready ? "Untitled note" : undefined}
+              autoComplete="off"
+              spellCheck
+              value={title}
+              readOnly={readOnly}
+              onChange={handleTitleChange}
+              onKeyDown={handleTitleKeyDown}
+              onPaste={handleTitlePaste}
+              className="pad-title-reserve block h-14 w-full text-ellipsis bg-transparent pt-4 text-[1.75rem] leading-[36px] font-semibold tracking-[-0.01em] text-secondary-foreground caret-brand outline-none placeholder:font-medium placeholder:text-muted-foreground"
+            />
+            {/* Desktop-class screens only (CSS, same rule as the shell). Phones use the Save button in the top bar. */}
+            <div className="shell-desk-only absolute top-[1.125rem] right-0">
+              <SaveButton store={store} action={save} />
+            </div>
+          </div>
+
+          {/* One empty 28px rule between the title and the body. Clicking it starts the body. The rules run through it. */}
+          <div
+            aria-hidden="true"
+            onClick={(event) => {
+              event.stopPropagation();
+              focusEditor("start");
+            }}
+            className="h-7 shrink-0 cursor-text"
+          />
+
+          <NoteEditor
+            noteId={store.activeNote?.id ?? null}
+            value={body}
             readOnly={readOnly}
-            onChange={handleTitleChange}
-            onKeyDown={handleTitleKeyDown}
-            onPaste={handleTitlePaste}
-            className="block h-14 w-full text-ellipsis bg-transparent pt-4 text-[1.75rem] leading-[36px] font-semibold tracking-[-0.01em] text-secondary-foreground caret-brand outline-none placeholder:font-medium placeholder:text-muted-foreground"
+            placeholder={store.ready ? "Start writing…" : ""}
+            onChange={handleBodyChange}
+            onAtTop={focusTitleEnd}
+            onReady={onEditorReady}
+            handleRef={editorRef}
           />
         </div>
-
-        {/* One empty 28px rule between the title and the body. Clicking it starts the body. The rules run through it. */}
-        <div
-          aria-hidden="true"
-          onClick={(event) => {
-            event.stopPropagation();
-            focusEditor("start");
-          }}
-          className="h-7 shrink-0 cursor-text"
-        />
-
-        <NoteEditor
-          noteId={store.activeNote?.id ?? null}
-          value={body}
-          readOnly={readOnly}
-          placeholder={store.ready ? "Start writing…" : ""}
-          onChange={handleBodyChange}
-          onAtTop={focusTitleEnd}
-          onReady={onEditorReady}
-          handleRef={editorRef}
-        />
       </div>
 
-      <div className="pointer-events-none sticky bottom-0 flex h-8 shrink-0 items-center justify-end px-3">
-        <div className="flex items-center gap-2 rounded-md bg-pad/90 px-1.5 py-0 text-xs text-muted-foreground tabular-nums">
+      {/* The strip is outside the scrolling sheet. Its height is 32px, or 56px plus the home-indicator inset on phones. */}
+      <div className="pad-strip flex shrink-0 items-center justify-end px-3">
+        <div className="flex min-w-0 items-center gap-2 rounded-md bg-pad/90 px-1.5 text-xs text-muted-foreground tabular-nums">
           <ExportMenu content={content} />
-          <span>{size}</span>
-          <span aria-hidden="true">·</span>
-          <span role="status" className="flex items-center gap-1.5">
-            <span aria-hidden="true" className={cn("size-1.5 rounded-full", status.dot)} />
-            {status.label}
+          <span className="hidden min-[360px]:inline">{size}</span>
+          {status ? (
+            <span aria-hidden="true" className="hidden min-[360px]:inline">
+              ·
+            </span>
+          ) : null}
+          <span className="flex min-w-0 items-center gap-1.5">
+            {status?.spinning ? (
+              <Icon icon={Loading03Icon} className="size-3.5 animate-spin motion-reduce:animate-none" />
+            ) : status?.dot ? (
+              <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", status.dot)} />
+            ) : null}
+            <span role="status" aria-live="polite" className="truncate">
+              {status?.label ?? ""}
+            </span>
           </span>
         </div>
       </div>
+
+      {save.prompt}
     </div>
   );
 }
