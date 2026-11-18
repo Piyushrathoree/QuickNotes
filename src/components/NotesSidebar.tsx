@@ -57,6 +57,8 @@ export const NotesSidebar = memo(function NotesSidebar({
 
   return (
     <div className="sb-panel flex min-h-0 flex-1 flex-col">
+      {/* Desktop only: the header with the collapse toggle, wordmark, About and theme. The mobile drawer draws its own header. */}
+      {collapsible && (
       <div className="flex h-12 shrink-0 items-center gap-1 px-2.5">
         {onToggle && (
           <button
@@ -84,9 +86,10 @@ export const NotesSidebar = memo(function NotesSidebar({
           >
             <Icon icon={HelpCircleIcon} />
           </Link>
-          {collapsible && <ThemeButton />}
+          <ThemeButton />
         </span>
       </div>
+      )}
 
       <div className="px-2.5">
         <button
@@ -117,9 +120,10 @@ export const NotesSidebar = memo(function NotesSidebar({
         <NoteList notes={notes} activeId={activeId} ready={ready} onPick={onPick} onDelete={onDelete} />
       </div>
 
-      {/* Pinned to the bottom. Expanded: account card with the Font row last. Collapsed: sign-in and Font icons.
-          Both share one grid cell, so the rail sits at the bottom edge and the card fades out beneath it. */}
-      <div className="grid shrink-0 grid-cols-1 items-end border-t border-border px-2.5 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+      {/* Pinned to the bottom and never shrinks: the note list above scrolls instead. Expanded: Font row and account
+          row (guests: sign-in card above the Font row). Collapsed: Font and account icons. Both share one grid cell,
+          so the rail sits at the bottom edge and the expanded footer fades out beneath it. */}
+      <div className="grid shrink-0 grid-cols-1 items-end border-t border-border px-2.5 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="sb-fade col-start-1 row-start-1 min-w-0">
           <AccountArea />
         </div>

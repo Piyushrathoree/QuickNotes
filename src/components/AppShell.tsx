@@ -2,20 +2,26 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
+import Link from "next/link";
 import { toast } from "sonner";
-import { Menu01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons";
+import { HelpCircleIcon, Menu01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons";
 import { applyFont, applyTheme } from "@/components/appearance";
 import { Icon } from "@/components/Icon";
 import { NotesSidebar } from "@/components/NotesSidebar";
+import { SaveButton } from "@/components/SaveButton";
 import { ThemeButton } from "@/components/ThemeButton";
 import { iconButtonClass } from "@/components/styles";
 import { WritingPad, type WritingPadHandle } from "@/components/WritingPad";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { site } from "@/lib/site";
 import { readUiPrefs, usePrefs } from "@/lib/store/prefs";
 import { useNoteStore } from "@/lib/store/useNoteStore";
 import { cn } from "@/lib/utils";
 
 const noSubscribe = () => () => undefined;
+
+// Phone top bar buttons: 44px targets (Apple and Material minimum), same look as the desktop icon buttons.
+const barButtonClass = cn(iconButtonClass, "size-11");
 
 // False while hydrating (the server snapshot), true afterwards. Lets the sidebar attribute wait for the real prefs.
 function useHydrated(): boolean {
@@ -32,6 +38,7 @@ export function AppShell() {
   // Radix would return focus to the menu button after the sheet closes. After a pick, send it to the pad instead.
   const pickedFromSheet = useRef(false);
   const sidebarOpen = prefs.sidebarOpen;
+  const theme = prefs.theme;
 
   // Callbacks read the latest store through a ref, so they keep their identity and the memoized sidebar skips
   // re-rendering while the pad types.
@@ -80,6 +87,17 @@ export function AppShell() {
     setPrefs((current) => ({ ...current, sidebarOpen: !current.sidebarOpen }));
   }, [setPrefs]);
 
+  // The browser chrome (Android task switcher, iOS standalone status bar) follows the theme the user picked in the
+  // app, not only the OS setting. The Next metadata emits two theme-color tags keyed by the OS scheme; set both.
+  useEffect(() => {
+    if (!hydrated) return;
+    const color = theme === "dark" ? site.colors.dark : site.colors.light;
+    document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((meta) => {
+      meta.removeAttribute("media");
+      meta.content = color;
+    });
+  }, [hydrated, theme]);
+
   // Drives the desktop sidebar width (see .sb-aside in globals.css). Layout effect, so it lands before paint.
   // Skipped during hydration: the server snapshot would wrongly say "open" and animate the sidebar on load.
   useLayoutEffect(() => {
@@ -111,6 +129,28 @@ export function AppShell() {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  // When the viewport shrinks (on-screen keyboard, rotation), the pad keeps its scroll position and the caret can fall
+  // below the new bottom edge. Bring the caret back into view inside the pad.
+  useEffect(() => {
+    let frame = 0;
+    const keepCaretVisible = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const node = window.getSelection()?.focusNode;
+        const el = node instanceof Element ? node : node?.parentElement;
+        if (el?.closest(".shell-main")) el.scrollIntoView({ block: "nearest" });
+      });
+    };
+    const vv = window.visualViewport;
+    window.addEventListener("resize", keepCaretVisible);
+    vv?.addEventListener("resize", keepCaretVisible);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", keepCaretVisible);
+      vv?.removeEventListener("resize", keepCaretVisible);
+    };
+  }, []);
+
   // Mod+Shift+O starts a new note, in both modes. Mod+B shows or hides the sidebar.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -131,12 +171,12 @@ export function AppShell() {
   }, [newNote, toggleSidebar]);
 
   return (
-    <div className="flex h-dvh bg-canvas text-foreground">
-      {/* One element for both widths. Its width animates; the tree inside never changes. */}
+    <div className="shell-root flex bg-canvas text-foreground">
+      {/* One element for both widths. Its width animates; the tree inside never changes. Desktop-class screens only. */}
       <aside
         ref={asideRef}
         id="notes-sidebar"
-        className="sb-aside hidden shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar md:flex"
+        className="sb-aside shell-desk-only shrink-0 flex-col overflow-hidden border-r border-border bg-sidebar"
       >
         <NotesSidebar
           notes={store.notes}
@@ -151,18 +191,23 @@ export function AppShell() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-12 shrink-0 items-center gap-1 px-3 md:hidden">
-          <button type="button" onClick={() => setSheetOpen(true)} aria-label="Open notes" className={iconButtonClass}>
-            <Icon icon={Menu01Icon} />
-          </button>
-          <span className="flex-1 select-none text-[15px] font-semibold tracking-[-0.01em] text-foreground">Quick Notes</span>
-          <ThemeButton />
-          <button type="button" onClick={newNote} aria-label="New note" className={cn(iconButtonClass, "text-brand")}>
-            <Icon icon={PencilEdit02Icon} />
-          </button>
+        {/* Phone top bar. The pad scrolls underneath, so the bar stays put without sticky positioning. */}
+        <header className="shell-phone-only shrink-0 flex-col border-b border-border bg-canvas/90 pt-[env(safe-area-inset-top)] backdrop-blur-md">
+          <div className="flex h-14 items-center gap-1 pr-2 pl-1 landscape:h-12">
+            <button type="button" onClick={() => setSheetOpen(true)} aria-label="Open notes" className={barButtonClass}>
+              <Icon icon={Menu01Icon} />
+            </button>
+            <span className="min-w-0 flex-1 truncate pl-0.5 text-[15px] font-semibold tracking-[-0.01em] text-foreground select-none">
+              Quick Notes
+            </span>
+            <SaveButton store={store} compact />
+            <button type="button" onClick={newNote} aria-label="New note" className={cn(barButtonClass, "text-brand")}>
+              <Icon icon={PencilEdit02Icon} />
+            </button>
+          </div>
         </header>
 
-        <main className="flex min-h-0 flex-1 flex-col p-2 md:p-3">
+        <main className="shell-main">
           <WritingPad store={store} handleRef={padRef} />
         </main>
       </div>
@@ -171,17 +216,35 @@ export function AppShell() {
         <SheetContent
           side="left"
           showCloseButton={false}
+          onSwipeClose={() => setSheetOpen(false)}
           onCloseAutoFocus={(event) => {
             if (!pickedFromSheet.current) return;
             event.preventDefault();
             pickedFromSheet.current = false;
             focusPad();
           }}
-          className="w-[min(20rem,85vw)] max-w-none gap-0 bg-sidebar p-0 sm:max-w-none"
+          className="gap-0 bg-sidebar p-0"
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Quick Notes</SheetTitle>
+            <SheetDescription>Your notes. Pick one to open it.</SheetDescription>
           </SheetHeader>
+          {/* The drawer's one wordmark and its one theme toggle. The notes header below only keeps the About link. */}
+          <div className="flex h-12 shrink-0 items-center gap-1 pr-2.5 pl-4">
+            <SheetTitle className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.01em] select-none">
+              Quick Notes
+            </SheetTitle>
+            {/* A real link (not a button) so crawlers find the About page. Navigating closes the drawer. */}
+            <Link
+              href="/about"
+              aria-label="About Quick Notes, Markdown shortcuts and FAQ"
+              title="About, shortcuts and FAQ"
+              onClick={() => setSheetOpen(false)}
+              className={barButtonClass}
+            >
+              <Icon icon={HelpCircleIcon} />
+            </Link>
+            <ThemeButton />
+          </div>
           <NotesSidebar
             notes={store.notes}
             activeId={store.activeNote?.id}

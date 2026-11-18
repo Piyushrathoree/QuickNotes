@@ -22,12 +22,13 @@ interface NoteRowProps {
   updatedAt: number;
   now: number;
   active: boolean;
+  unsaved: boolean;
   onPick: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-// Plain props only, so a row re-renders when its own title, time or active state changes, not on every keystroke.
-const NoteRow = memo(function NoteRow({ id, title, updatedAt, now, active, onPick, onDelete }: NoteRowProps) {
+// Plain props only, so a row re-renders when its own title, time, active or unsaved state changes, not on every keystroke.
+const NoteRow = memo(function NoteRow({ id, title, updatedAt, now, active, unsaved, onPick, onDelete }: NoteRowProps) {
   return (
     <li
       className={cn(
@@ -42,7 +43,18 @@ const NoteRow = memo(function NoteRow({ id, title, updatedAt, now, active, onPic
         className="min-w-0 flex-1 rounded-md px-2.5 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span className="block truncate text-sm font-medium text-foreground">{title}</span>
-        <span className="block truncate text-xs text-muted-foreground">{now > 0 ? relativeTime(updatedAt, now) : ""}</span>
+        <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="truncate">{now > 0 ? relativeTime(updatedAt, now) : ""}</span>
+          {unsaved && (
+            <span
+              title="Unsaved changes"
+              className="inline-flex shrink-0 items-center"
+            >
+              <span aria-hidden="true" className="size-2 rounded-full bg-brand ring-2 ring-brand-soft" />
+              <span className="sr-only">Unsaved changes</span>
+            </span>
+          )}
+        </span>
       </button>
       <button
         type="button"
@@ -88,6 +100,7 @@ export const NoteList = memo(function NoteList({ notes, activeId, ready, onPick,
           updatedAt={note.updatedAt}
           now={now}
           active={note.id === activeId}
+          unsaved={note.unsaved === true}
           onPick={onPick}
           onDelete={onDelete}
         />
