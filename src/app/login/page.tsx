@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { AuthShell } from "@/components/auth/AuthShell";
+import type { AuthMode } from "@/components/auth/ModeSwitch";
 import { LoginForm } from "@/components/LoginForm";
 import { getServerSession } from "@/lib/session";
 
@@ -10,19 +12,27 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-async function LoginContent({ searchParams }: { searchParams: Promise<{ reset?: string }> }) {
-  const [session, { reset }] = await Promise.all([getServerSession(), searchParams]);
+async function LoginContent({ searchParams }: { searchParams: Promise<{ reset?: string; mode?: string }> }) {
+  const [session, { reset, mode }] = await Promise.all([getServerSession(), searchParams]);
   if (session) redirect("/dashboard");
-  return <LoginForm notice={reset ? "Password updated. Sign in with your new password." : undefined} />;
+  // /login?mode=signup opens "Create account"; anything else opens "Sign in".
+  const initialMode: AuthMode = mode === "signup" ? "signup" : "signin";
+  return (
+    <LoginForm
+      initialMode={initialMode}
+      notice={reset ? "Password updated. Sign in with your new password." : undefined}
+    />
+  );
 }
 
 // Reads the session and URL on every request, so that part streams inside Suspense (Cache Components).
-export default function LoginPage({ searchParams }: { searchParams: Promise<{ reset?: string }> }) {
+// The chrome is static and renders immediately; the form reserves its own height while it loads.
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ reset?: string; mode?: string }> }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-10">
-      <Suspense fallback={null}>
+    <AuthShell>
+      <Suspense fallback={<div aria-hidden="true" className="min-h-[28rem]" />}>
         <LoginContent searchParams={searchParams} />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }

@@ -2,159 +2,241 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
-import { AuthCard, authInputClass, authLinkClass } from "@/components/auth/AuthCard";
-import { EMAIL_PATTERN, MIN_PASSWORD_LENGTH, describeAuthError } from "@/components/auth/errors";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { AuthCard, authLinkClass } from "@/components/auth/AuthCard";
+import { AutoHeight } from "@/components/auth/AutoHeight";
+import { GuestOption } from "@/components/auth/GuestOption";
+import { ModeSwitch, type AuthMode } from "@/components/auth/ModeSwitch";
+import { NoticeBanner, ErrorBanner } from "@/components/auth/Notices";
 import { PasswordInput } from "@/components/auth/PasswordInput";
-import { Button } from "@/components/ui/button";
+import { PasswordStrength } from "@/components/auth/PasswordStrength";
+import { SubmitButton } from "@/components/auth/SubmitButton";
+import { TextField } from "@/components/auth/TextField";
+import { EMAIL_PATTERN, MIN_PASSWORD_LENGTH, describeAuthError } from "@/components/auth/errors";
 import { signIn, signUp } from "@/lib/auth-client";
 
-type Mode = "signin" | "signup";
+type Field = "name" | "email" | "password";
+type FieldErrors = Partial<Record<Field, string>>;
 
-export function LoginForm({ notice }: { notice?: string }) {
+const FIELD_ORDER: Field[] = ["name", "email", "password"];
+
+function validate(field: Field, value: string, mode: AuthMode): string | undefined {
+  if (field === "email") {
+    const address = value.trim();
+    if (!address) return "Enter your email address.";
+    if (!EMAIL_PATTERN.test(address)) return "Enter an email address like name@example.com.";
+  }
+  if (field === "password") {
+    if (!value) return mode === "signup" ? "Choose a password." : "Enter your password.";
+    if (mode === "signup" && value.length < MIN_PASSWORD_LENGTH) {
+      return `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
+    }
+  }
+  return undefined;
+}
+
+export function LoginForm({ notice, initialMode }: { notice?: string; initialMode: AuthMode }) {
   const router = useRouter();
-  const emailId = useId();
-  const nameId = useId();
-  const errorId = useId();
-  const [mode, setMode] = useState<Mode>("signin");
+  const formId = useId();
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const busyRef = useRef(false);
+
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [banner, setBanner] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const isSignUp = mode === "signup";
+  const bannerId = `${formId}-banner`;
 
-  function switchMode() {
-    setMode(isSignUp ? "signin" : "signup");
-    setError(null);
+  // Focus the email field on desktop only. On touch screens focusing would open the keyboard and shift the layout.
+  useEffect(() => {
+    if (window.matchMedia("(pointer: fine)").matches) emailRef.current?.focus();
+  }, []);
+
+  function valueOf(field: Field): string {
+    if (field === "name") return name;
+    if (field === "email") return email;
+    return password;
+  }
+
+  function refOf(field: Field) {
+    if (field === "name") return nameRef;
+    if (field === "email") return emailRef;
+    return passwordRef;
+  }
+
+  // Validate on blur, but do not shout about an empty field the user only tabbed through.
+  function blurCheck(field: Field) {
+    const value = valueOf(field);
+    if (!value && !errors[field]) return;
+    setErrors((current) => ({ ...current, [field]: validate(field, value, mode) }));
+  }
+
+  // Once a field has an error, keep its message in step with what is typed so it clears as soon as it is fixed.
+  function revalidateIfShown(field: Field, nextValue: string) {
+    if (errors[field]) setErrors((current) => ({ ...current, [field]: validate(field, nextValue, mode) }));
+  }
+
+  function switchMode(next: AuthMode) {
+    if (next === mode) return;
+    setMode(next);
+    setErrors({});
+    setBanner(null);
+    // Keep the URL in step so the view can be shared or reloaded. replaceState keeps Next's router state.
+    const url = new URL(window.location.href);
+    url.searchParams.set("mode", next);
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const address = email.trim();
-    if (!EMAIL_PATTERN.test(address)) {
-      setError("Enter a valid email address.");
-      return;
+    if (busyRef.current) return;
+
+    const next: FieldErrors = {};
+    const fields: Field[] = isSignUp ? FIELD_ORDER : ["email", "password"];
+    for (const field of fields) {
+      const message = validate(field, valueOf(field), mode);
+      if (message) next[field] = message;
     }
-    if (isSignUp && password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Use at least ${MIN_PASSWORD_LENGTH} characters for your password.`);
+    setErrors(next);
+    setBanner(null);
+
+    const firstInvalid = fields.find((field) => next[field]);
+    if (firstInvalid) {
+      refOf(firstInvalid).current?.focus();
       return;
     }
 
-    setError(null);
+    busyRef.current = true;
     setBusy(true);
+    const address = email.trim();
     const { error: requestError } = isSignUp
       ? await signUp.email({ name: name.trim() || address.split("@")[0], email: address, password })
       : await signIn.email({ email: address, password });
 
     if (requestError) {
+      busyRef.current = false;
       setBusy(false);
-      setError(
+      setBanner(
         describeAuthError(
           requestError,
           isSignUp ? "We couldn't create your account. Please try again." : "We couldn't sign you in. Please try again.",
         ),
       );
+      // Put the cursor where the fix is: the email for a taken address, otherwise the password.
+      const code = (requestError.code ?? "").toUpperCase();
+      (code.includes("ALREADY_EXISTS") ? emailRef : passwordRef).current?.focus();
       return;
     }
 
-    // Keep the button disabled while the dashboard loads.
+    // Busy stays on while the dashboard loads, so the button cannot be pressed twice.
     router.replace("/dashboard");
     router.refresh();
   }
 
+  const copy = isSignUp
+    ? {
+        title: "Your notes, wherever you write",
+        description:
+          "Create a free account to keep your notes safe and open them on any device. Notes already in this browser come with you.",
+      }
+    : {
+        title: "Welcome back",
+        description: "Sign in to pick up where you left off. Your notes sync across all your devices.",
+      };
+
   return (
-    <AuthCard
-      title={isSignUp ? "Create your account" : "Sign in to Quick Notes"}
-      description={
-        isSignUp
-          ? "Sync your notes across devices. Your notes from this browser move into your account."
-          : "Welcome back. Your notes sync across devices."
-      }
-      footer={
-        <div className="flex flex-col gap-2">
-          <p>
-            {isSignUp ? "Already have an account? " : "New here? "}
-            <button type="button" onClick={switchMode} className={`${authLinkClass} font-medium text-foreground`}>
-              {isSignUp ? "Sign in" : "Create an account"}
-            </button>
-          </p>
-          <Link href="/" className={authLinkClass}>
-            Continue as guest
-          </Link>
-        </div>
-      }
-    >
-      {notice && (
-        <p role="status" className="mb-4 rounded-lg bg-brand-soft px-3 py-2 text-sm text-secondary-foreground">
-          {notice}
-        </p>
-      )}
-      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
-        {isSignUp && (
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={nameId} className="text-sm font-medium text-foreground">
-              Name <span className="font-normal text-muted-foreground">(optional)</span>
-            </label>
-            <input
-              id={nameId}
-              type="text"
-              name="name"
-              autoComplete="name"
-              placeholder="Your name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className={authInputClass}
+    <AuthCard title={copy.title} description={copy.description}>
+      {notice && <NoticeBanner>{notice}</NoticeBanner>}
+
+      <ModeSwitch value={mode} onChange={switchMode} />
+
+      <div className="mt-6">
+        <AutoHeight>
+          <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
+            {banner && <ErrorBanner id={bannerId}>{banner}</ErrorBanner>}
+
+            {isSignUp && (
+              <TextField
+                ref={nameRef}
+                label="Name"
+                labelAside={<span className="text-sm text-muted-foreground">Optional</span>}
+                name="name"
+                type="text"
+                autoComplete="name"
+                enterKeyHint="next"
+                placeholder="Your name"
+                value={name}
+                error={errors.name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  revalidateIfShown("name", event.target.value);
+                }}
+              />
+            )}
+
+            <TextField
+              ref={emailRef}
+              label="Email"
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete={isSignUp ? "email" : "username"}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="next"
+              placeholder="you@example.com"
+              value={email}
+              error={errors.email}
+              onBlur={() => blurCheck("email")}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                revalidateIfShown("email", event.target.value);
+              }}
             />
-          </div>
-        )}
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={emailId} className="text-sm font-medium text-foreground">
-            Email
-          </label>
-          <input
-            id={emailId}
-            type="email"
-            name="email"
-            inputMode="email"
-            autoComplete="email"
-            autoFocus
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@example.com"
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? errorId : undefined}
-            className={authInputClass}
-          />
-        </div>
-        <PasswordInput
-          label="Password"
-          value={password}
-          onChange={setPassword}
-          autoComplete={isSignUp ? "new-password" : "current-password"}
-          placeholder={isSignUp ? "At least 8 characters" : "Enter your password"}
-          hint={isSignUp ? `At least ${MIN_PASSWORD_LENGTH} characters.` : undefined}
-          invalid={Boolean(error)}
-          describedBy={error ? errorId : undefined}
-          labelAside={
-            !isSignUp && (
-              <Link href="/forgot-password" className={`${authLinkClass} text-sm text-muted-foreground`}>
-                Forgot password?
-              </Link>
-            )
-          }
-        />
-        {error && (
-          <p id={errorId} role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        <Button type="submit" disabled={busy} className="h-10 w-full">
-          {busy ? (isSignUp ? "Creating account…" : "Signing in…") : isSignUp ? "Create account" : "Sign in"}
-        </Button>
-      </form>
+
+            <div className="flex flex-col gap-3">
+              <PasswordInput
+                tall
+                label="Password"
+                inputRef={passwordRef}
+                value={password}
+                onChange={(next) => {
+                  setPassword(next);
+                  revalidateIfShown("password", next);
+                }}
+                onBlur={() => blurCheck("password")}
+                autoComplete={isSignUp ? "new-password" : "current-password"}
+                enterKeyHint="go"
+                placeholder={isSignUp ? "At least 8 characters" : "Enter your password"}
+                hint={isSignUp ? `At least ${MIN_PASSWORD_LENGTH} characters.` : undefined}
+                error={errors.password}
+                labelAside={
+                  !isSignUp && (
+                    <Link href="/forgot-password" className={`${authLinkClass} text-sm text-muted-foreground hover:text-foreground`}>
+                      Forgot password?
+                    </Link>
+                  )
+                }
+              />
+              {isSignUp && <PasswordStrength password={password} />}
+            </div>
+
+            <SubmitButton busy={busy} busyLabel={isSignUp ? "Creating account…" : "Signing in…"}>
+              {isSignUp ? "Create account" : "Sign in"}
+            </SubmitButton>
+          </form>
+
+          <GuestOption />
+        </AutoHeight>
+      </div>
     </AuthCard>
   );
 }
