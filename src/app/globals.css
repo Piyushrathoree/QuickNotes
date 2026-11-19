@@ -219,3 +219,149 @@ html[data-sidebar="collapsed"] .sb-aside .sb-rail-only {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---- Mobile shell (Agent E). Phones are below md, or a short landscape phone (height 500px or less, no hover).
+   The desktop sidebar only appears on desktop-class screens, so an 844px-wide landscape phone keeps the phone shell. ---- */
+.shell-desk-only {
+  display: none;
+}
+
+.shell-phone-only {
+  display: flex;
+}
+
+.shell-root {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.shell-main {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Phones: the pad is full-bleed under the top bar, so it drops its card frame. */
+.shell-main > * {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (min-width: 48rem) and (min-height: 501px), (min-width: 48rem) and (hover: hover) {
+  .shell-desk-only {
+    display: flex;
+  }
+
+  .shell-phone-only {
+    display: none;
+  }
+
+  .shell-main {
+    padding: 0.75rem;
+  }
+
+  .shell-main > * {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-pad);
+  }
+}
+
+/* The shell is one screen: it follows the visible height (keyboard included) and never scrolls the document. */
+html:has(.shell-root),
+html:has(.shell-root) body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.shell-root {
+  height: 100dvh;
+  overscroll-behavior: none;
+}
+
+/* Touch: no grey tap flash, no double-tap zoom delay on controls. Zoom itself stays enabled. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+label,
+summary,
+[role="button"],
+[role="menuitem"],
+[role="option"] {
+  touch-action: manipulation;
+}
+
+/* iOS zooms the page when a focused field is under 16px. Only text inputs without their own size class. */
+@media (max-width: 47.99rem) {
+  @layer base {
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+}
+
+/* ── Auth pages (sign in, create account, forgot and reset password). Owned by the auth block only. ── */
+.auth-serif {
+  font-family: var(--font-plex-serif), Georgia, serif;
+}
+
+/* Faint notepad rules behind the auth column, fading out toward the bottom. */
+.auth-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 27px,
+    var(--rule) 27px 28px
+  );
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 72%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 72%);
+}
+
+.auth-enter {
+  animation: auth-enter 250ms var(--ease-soft) both;
+}
+
+@keyframes auth-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Height follows the content with a short transition (set from JS, see AutoHeight). */
+.auth-height {
+  overflow: clip;
+  overflow-clip-margin: 8px;
+  transition: height 250ms var(--ease-soft);
+}
+
+/* Segmented switch thumb. */
+.auth-thumb {
+  transition: transform 250ms var(--ease-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-enter {
+    animation: none;
+  }
+  .auth-height,
+  .auth-thumb {
+    transition: none;
+  }
+}
