@@ -1,8 +1,11 @@
+import { Alert02Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
 import { AuthCard, authLinkClass } from "@/components/auth/AuthCard";
+import { AuthShell } from "@/components/auth/AuthShell";
+import { Icon } from "@/components/Icon";
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 
 export const metadata: Metadata = {
@@ -12,29 +15,41 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-async function ResetContent({ searchParams }: { searchParams: Promise<{ token?: string; error?: string }> }) {
-  const { token, error } = await searchParams;
-
-  return token && !error ? (
-    <ResetPasswordForm token={token} />
-  ) : (
+function InvalidLink() {
+  return (
     <AuthCard
       title="This link doesn't work"
-      description="The reset link is invalid or has expired. Request a new one and try again."
+      description="That reset link is invalid or has expired. Ask for a new one and try again."
       footer={
         <Link href="/login" className={authLinkClass}>
           Back to sign in
         </Link>
       }
     >
-      <Link
-        href="/forgot-password"
-        className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary text-sm font-medium text-primary-foreground outline-none transition-colors duration-150 hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring"
-      >
-        Request a new link
-      </Link>
+      <div className="flex flex-col gap-6">
+        <div className="flex gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-[12px] bg-brand-soft text-destructive">
+            <Icon icon={Alert02Icon} />
+          </span>
+          <p className="self-center text-sm leading-6 text-secondary-foreground">
+            Reset links work once and expire after an hour. A newer link replaces any older one.
+          </p>
+        </div>
+        <Link
+          href="/forgot-password"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-base font-medium text-primary-foreground outline-none transition-colors duration-150 hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/35"
+        >
+          Request a new link
+          <Icon icon={ArrowRight01Icon} />
+        </Link>
+      </div>
     </AuthCard>
   );
+}
+
+async function ResetContent({ searchParams }: { searchParams: Promise<{ token?: string; error?: string }> }) {
+  const { token, error } = await searchParams;
+  return token && !error ? <ResetPasswordForm token={token} /> : <InvalidLink />;
 }
 
 // The token comes from the URL, so it is read inside Suspense (Cache Components).
@@ -44,10 +59,10 @@ export default function ResetPasswordPage({
   searchParams: Promise<{ token?: string; error?: string }>;
 }) {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-10">
-      <Suspense fallback={null}>
+    <AuthShell>
+      <Suspense fallback={<div aria-hidden="true" className="min-h-[28rem]" />}>
         <ResetContent searchParams={searchParams} />
       </Suspense>
-    </main>
+    </AuthShell>
   );
 }
