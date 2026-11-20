@@ -83,7 +83,14 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false, email: false, address: false },
 };
 
+// Zoom stays enabled (no maximumScale or userScalable=no). "cover" lets the shell use the notch and home-indicator
+// areas, which it pads with env(safe-area-inset-*). "resizes-content" makes the on-screen keyboard shrink the layout
+// viewport (100dvh follows it), so the caret stays in view.
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#efebdf" },
     { media: "(prefers-color-scheme: dark)", color: "#242423" },
