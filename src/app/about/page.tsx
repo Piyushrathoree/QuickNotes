@@ -34,7 +34,7 @@ const markdown: [string, string][] = [
 
 const shortcuts: [string, string][] = [
   ["Ctrl/⌘ + Shift + O", "New note"],
-  ["Ctrl/⌘ + S", "Save the note as a Markdown (.md) file"],
+  ["Ctrl/⌘ + S", "Save the note to your account (when signed in)"],
   ["Ctrl/⌘ + B", "Bold in the editor; elsewhere, show or hide the sidebar"],
   ["Ctrl/⌘ + I", "Italic"],
   ["Tab / Shift + Tab", "Indent or outdent a list item"],
