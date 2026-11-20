@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Internal planning docs (kept locally, not published)
 /docs/
+
+# Scratch output from Codex test runs
+.codex-tmp/
