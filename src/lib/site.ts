@@ -23,7 +23,7 @@ export const site = {
     "A free online notepad that opens instantly. Write with live Markdown, export to .md or .txt, and sync across devices with an optional account.",
   /** Longer plain-language summary for JSON-LD, the About page and llms.txt. */
   summary:
-    "Quick Notes is a free, open-source online notepad. Open the page and start typing — no sign-up needed. Notes save automatically in your browser, Markdown formats as you type (bullets, numbered lists, checklists, headings, horizontal rules and code blocks with syntax highlighting), and any note can be downloaded as a Markdown (.md) or plain text (.txt) file. Create a free account with an email and password to keep your notes in the cloud and use them on any device.",
+    "Quick Notes is a free, open-source online notepad. Open the page and start typing — no sign-up needed. Notes save automatically in your browser, Markdown formats as you type (bullets, numbered lists, checklists, headings, horizontal rules and code blocks with syntax highlighting), and any note can be downloaded as a Markdown (.md) or plain text (.txt) file. Create a free account with an email and password, then press Save to keep your notes in the cloud and open them on any device.",
   tagline: "A free online notepad with live Markdown",
   keywords: [
     "online notepad",
@@ -53,7 +53,7 @@ export const site = {
     "Save any note as a Markdown (.md) or plain text (.txt) file",
     "Three writing fonts: handwritten, sans-serif and serif",
     "Light and dark themes",
-    "Optional free account (email and password) to sync notes across devices",
+    "Optional free account (email and password): press Save to keep notes in the cloud and open them on any device",
     "Works on phones, tablets and desktops",
     "Free and open source (MIT license)",
   ],

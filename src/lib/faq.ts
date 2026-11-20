@@ -23,7 +23,7 @@ export const faqs: readonly Faq[] = [
   {
     question: "Where are my notes stored?",
     answer:
-      "Without an account, notes are stored in your browser's local storage on that device, so clearing your browser data removes them. When you sign in, your notes are saved to your account in the app's database and load on any device where you sign in. Notes you wrote before signing in move into your account automatically.",
+      "As you type, every note is stored in your browser's local storage on that device, so clearing your browser data removes unsaved notes. If you are signed in, press Save (or Ctrl+S, Cmd+S on Mac) to store the note in your account; saved notes load on any device where you sign in. Notes you wrote before signing in move into your account automatically.",
   },
   {
     question: "Does Quick Notes support Markdown?",
@@ -43,7 +43,12 @@ export const faqs: readonly Faq[] = [
   {
     question: "Can I download or export my notes?",
     answer:
-      "Yes. Use the download button next to the word count to save the current note as a Markdown (.md) file or a plain text (.txt) file, or press Ctrl+S (Cmd+S on Mac) to save it as Markdown.",
+      "Yes. Use the download button next to the word count to save the current note as a Markdown (.md) file or a plain text (.txt) file.",
+  },
+  {
+    question: "How do I save my notes to my account?",
+    answer:
+      "Sign in, then press the Save button at the top right of the note, or Ctrl+S (Cmd+S on Mac). Until you press Save, your edits stay on your device; a dot next to a note in the list marks changes that are not saved to your account yet. If you are not signed in, Save asks you to sign in or create a free account.",
   },
   {
     question: "Can I change the font or use dark mode?",
