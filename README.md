@@ -39,6 +39,19 @@ Sign-in is **email + password** (Better Auth). There is no email-verification st
 
 Set these values in Vercel under **Project → Settings → Environment Variables** for Production.
 
+### SEO and answer engines
+
+Set `NEXT_PUBLIC_SITE_URL` to the public domain (for example `https://quicknotes.example.com`); on Vercel it falls back to the production domain automatically. The app then serves:
+
+- `/sitemap.xml` and `/robots.txt` (private routes such as `/dashboard` and `/api` are excluded; AI search crawlers are allowed on public pages)
+- `/manifest.webmanifest` with installable app icons
+- Open Graph and Twitter share images generated at build time
+- JSON-LD structured data (`WebApplication`, `WebSite`, `FAQPage`, `BreadcrumbList`)
+- `/about`: features, Markdown shortcuts, keyboard shortcuts and an FAQ written for search and answer engines
+- `/llms.txt`: a plain Markdown summary for AI assistants
+
+After deploying, submit the sitemap in Google Search Console and Bing Webmaster Tools.
+
 ## Scripts
 
 - `pnpm typecheck` — check TypeScript without emitting files.

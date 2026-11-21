@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, IBM_Plex_Sans, IBM_Plex_Serif, Shantell_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppToaster } from "@/components/AppToaster";
+import { site } from "@/lib/site";
 import "./globals.css";
 
 // UI chrome uses Geist, code uses Geist Mono. The three writing faces are picked by the font pref.
@@ -23,7 +24,7 @@ const geistMono = Geist_Mono({
 const shantellSans = Shantell_Sans({
   variable: "--font-shantell",
   subsets: ["latin"],
-  weight: ["400", "700", "800"],
+  weight: ["400", "600", "700", "800"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -45,8 +46,41 @@ const plexSerif = IBM_Plex_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Quick Notes",
-  description: "A calm, simple space to write and keep your notes.",
+  metadataBase: new URL(site.url),
+  title: { default: site.title, template: `%s · ${site.name}` },
+  description: site.description,
+  applicationName: site.name,
+  keywords: [...site.keywords],
+  authors: [site.author],
+  creator: site.author.name,
+  publisher: site.author.name,
+  category: "productivity",
+  openGraph: {
+    type: "website",
+    siteName: site.name,
+    title: site.title,
+    description: site.description,
+    locale: site.locale,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: site.title,
+    description: site.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  appleWebApp: { capable: true, title: site.name, statusBarStyle: "default" },
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = {

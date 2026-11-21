@@ -6,7 +6,7 @@ import { LoginForm } from "@/components/LoginForm";
 import { getServerSession } from "@/lib/session";
 
 export const metadata: Metadata = {
-  title: "Sign in · Quick Notes",
+  title: "Sign in",
   robots: { index: false },
 };
 

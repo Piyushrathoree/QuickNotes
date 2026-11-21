@@ -1,7 +1,8 @@
 "use client";
 
 import { memo, useSyncExternalStore } from "react";
-import { PencilEdit02Icon, SidebarLeftIcon } from "@hugeicons/core-free-icons";
+import Link from "next/link";
+import { HelpCircleIcon, PencilEdit02Icon, SidebarLeftIcon } from "@hugeicons/core-free-icons";
 import { AccountArea } from "@/components/AccountArea";
 import { Icon } from "@/components/Icon";
 import { NoteList } from "@/components/NoteList";
@@ -73,11 +74,18 @@ export const NotesSidebar = memo(function NotesSidebar({
         <span className="sb-fade min-w-0 flex-1 truncate pl-1 text-[15px] font-semibold tracking-[-0.01em] text-foreground select-none">
           Quick Notes
         </span>
-        {collapsible && (
-          <span className="sb-fade shrink-0">
-            <ThemeButton />
-          </span>
-        )}
+        <span className="sb-fade flex shrink-0 items-center">
+          {/* A real link (not a button) so crawlers find the About page from the app itself. */}
+          <Link
+            href="/about"
+            aria-label="About Quick Notes, Markdown shortcuts and FAQ"
+            title="About, shortcuts and FAQ"
+            className={iconButtonClass}
+          >
+            <Icon icon={HelpCircleIcon} />
+          </Link>
+          {collapsible && <ThemeButton />}
+        </span>
       </div>
 
       <div className="px-2.5">

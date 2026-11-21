@@ -6,7 +6,7 @@ import { AuthCard, authLinkClass } from "@/components/auth/AuthCard";
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
 
 export const metadata: Metadata = {
-  title: "Reset password · Quick Notes",
+  title: "Reset password",
   robots: { index: false },
   // Keep the reset token out of the Referer header sent to other sites.
   referrer: "no-referrer",

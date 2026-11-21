@@ -6,7 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { getServerSession } from "@/lib/session";
 
 export const metadata: Metadata = {
-  title: "Quick Notes",
+  title: "Your notes",
   robots: { index: false },
 };
 
