@@ -1,3 +1,5 @@
+<p align="center"><img src="public/brand/quick-notes-mark.svg" width="96" height="96" alt="Quick Notes logo: two note cards with a handwritten q"></p>
+
 # Quick Notes
 
 A fast, calm notepad. Open the page and start typing: notes autosave in your browser, with live Markdown (lists, headings, rules, code blocks), three writing fonts, light and dark themes, and export to `.md` or `.txt`. Sign in with email and password to keep your notes in the cloud and sync across devices.
@@ -33,15 +35,16 @@ Sign-in is **email + password** (Better Auth). There is no email-verification st
 
 1. Add `DATABASE_URL` to the Vercel project's environment variables using the Neon pooled connection string.
 2. Generate a separate production secret with `openssl rand -base64 32` and set it as `BETTER_AUTH_SECRET`.
-3. Set `BETTER_AUTH_URL` to the production origin, such as `https://notes.example.com`.
-4. Set `GMAIL_USER` and `GMAIL_APP_PASSWORD` (required in production, since there is no console to print reset links to).
-5. Apply pending migrations against the configured Neon database with `pnpm db:migrate` before deploying.
+3. Set `BETTER_AUTH_URL` to `https://www.quicknotes.site`, the canonical production origin. The apex domain redirects to `www`.
+4. Set `NEXT_PUBLIC_SITE_URL` to `https://www.quicknotes.site` as well. Better Auth trusts this exact public origin and the exact Vercel deployment origins.
+5. Set `GMAIL_USER` and `GMAIL_APP_PASSWORD` (required in production, since there is no console to print reset links to).
+6. Apply pending migrations against the configured Neon database with `pnpm db:migrate` before deploying.
 
 Set these values in Vercel under **Project → Settings → Environment Variables** for Production.
 
 ### SEO and answer engines
 
-Set `NEXT_PUBLIC_SITE_URL` to the public domain (for example `https://quicknotes.example.com`); on Vercel it falls back to the production domain automatically. The app then serves:
+`NEXT_PUBLIC_SITE_URL` also controls the canonical URLs used by the app. The app then serves:
 
 - `/sitemap.xml` and `/robots.txt` (private routes such as `/dashboard` and `/api` are excluded; AI search crawlers are allowed on public pages)
 - `/manifest.webmanifest` with installable app icons

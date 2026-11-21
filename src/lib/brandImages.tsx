@@ -1,48 +1,11 @@
+import { LogoMark } from "@/components/brand/LogoMark";
 import { site } from "@/lib/site";
 
 const { light, ink, paper } = site.colors;
 
-/** The app mark (rounded ink square with three ruled lines), drawn for next/og at any size. */
+/** The app mark for next/og images: the same SVG as the in-app logo. `padded` = full-bleed (maskable / Apple). */
 export function AppMark({ size, padded = false }: { size: number; padded?: boolean }) {
-  // Maskable icons need the mark inside the central safe zone, so pad it on a full-bleed background.
-  const inner = padded ? Math.round(size * 0.72) : size;
-  const radius = Math.round(inner * 0.22);
-  const line = Math.max(2, Math.round(inner * 0.065));
-  const gap = Math.round(inner * 0.155);
-  const left = Math.round(inner * 0.28);
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: padded ? ink : "transparent",
-      }}
-    >
-      <div
-        style={{
-          width: inner,
-          height: inner,
-          borderRadius: padded ? 0 : radius,
-          background: ink,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          paddingLeft: left,
-          gap,
-        }}
-      >
-        {[0.44, 0.44, 0.31].map((width, index) => (
-          <div
-            key={index}
-            style={{ width: Math.round(inner * width), height: line, borderRadius: line, background: paper }}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  return <LogoMark size={size} bleed={padded} detail="full" />;
 }
 
 /** 1200×630 social card: a ruled notepad sheet with the name, tagline and a few Markdown examples. */

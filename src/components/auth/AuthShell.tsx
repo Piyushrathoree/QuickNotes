@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AppMark } from "@/components/auth/AppMark";
+import { LogoMark } from "@/components/brand/LogoMark";
 import { authLinkClass } from "@/components/auth/AuthCard";
 
 /** Page chrome for the account screens: wordmark, a quiet guest link, faint notepad rules, one centred column. */
@@ -11,7 +11,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
 
       <header className="relative z-10 flex items-center justify-between gap-4 pt-[max(1.25rem,env(safe-area-inset-top))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-4 pl-[max(1.25rem,env(safe-area-inset-left))] sm:px-8 sm:pt-6">
         <Link href="/" className={`${authLinkClass} flex items-center gap-2.5 text-[15px] font-semibold text-foreground no-underline hover:no-underline`}>
-          <AppMark size={28} />
+          <LogoMark size={30} tile="var(--logo-tile)" />
           <span>Quick Notes</span>
         </Link>
         <Link href="/" className={`${authLinkClass} min-h-11 inline-flex items-center text-sm text-secondary-foreground`}>
