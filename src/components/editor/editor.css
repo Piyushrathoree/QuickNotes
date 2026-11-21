@@ -12,6 +12,12 @@
   color: var(--text);
 }
 
+/* The handwritten font reads small at 16px, so its body text is a touch larger. The 28px row stays the same,
+   so the ruled lines still line up. */
+:root[data-font="hand"] .note-editor {
+  font-size: 1.125rem;
+}
+
 /* CodeMirror puts an empty inline image next to each widget. Its default is 1em tall, which would grow the row. */
 .note-editor .cm-widgetBuffer {
   display: inline-block;
@@ -264,5 +270,7 @@
 }
 
 .note-editor .cm-placeholder {
+  position: relative;
+  top: 3px;
   color: var(--text-muted);
 }

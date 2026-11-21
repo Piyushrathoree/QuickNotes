@@ -11,7 +11,7 @@ export const editorBaseTheme = EditorView.theme({
     backgroundColor: "transparent",
     color: "var(--text)",
     fontFamily: "var(--write-font)",
-    fontSize: "1rem",
+    fontSize: "inherit",
     lineHeight: "1.75rem",
   },
   "&.cm-focused": { outline: "none" },
