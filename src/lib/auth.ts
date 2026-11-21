@@ -12,6 +12,19 @@ function requiredEnv(name: string): string {
   return value;
 }
 
+function configuredOrigin(value: string | undefined, name: string): string | undefined {
+  const configured = value?.trim();
+  if (!configured) return undefined;
+
+  try {
+    const url = new URL(configured.includes("://") ? configured : `https://${configured}`);
+    if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error();
+    return url.origin;
+  } catch {
+    throw new Error(`${name} must be a valid HTTP(S) URL or hostname.`);
+  }
+}
+
 function createAuthInstance() {
   const secret = requiredEnv("BETTER_AUTH_SECRET");
   if (secret.length < 32) {
@@ -28,11 +41,24 @@ function createAuthInstance() {
   if (!database) throw new Error("DATABASE_URL is required to initialize authentication.");
 
   const baseURL = configuredUrl.origin;
+  // The canonical auth URL can differ from the URL users open (for example, a custom
+  // production domain or a Vercel preview). Trust only the exact origins configured
+  // for this site and deployment; Better Auth rejects other origins with 403.
+  const trustedOrigins = new Set([baseURL]);
+  for (const [value, name] of [
+    [process.env.NEXT_PUBLIC_SITE_URL, "NEXT_PUBLIC_SITE_URL"],
+    [process.env.VERCEL_PROJECT_PRODUCTION_URL, "VERCEL_PROJECT_PRODUCTION_URL"],
+    [process.env.VERCEL_URL, "VERCEL_URL"],
+  ] as const) {
+    const origin = configuredOrigin(value, name);
+    if (origin) trustedOrigins.add(origin);
+  }
+
   return betterAuth({
     appName: "Quick Notes",
     baseURL,
     secret,
-    trustedOrigins: [baseURL],
+    trustedOrigins: [...trustedOrigins],
     database: drizzleAdapter(database, {
       provider: "pg",
       schema: { user, session, account, verification },
