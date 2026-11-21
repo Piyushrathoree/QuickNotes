@@ -116,6 +116,7 @@ export function ChangePasswordDialog({ open, onOpenChange, email }: ChangePasswo
               onChange={setCurrent}
               autoComplete="current-password"
               autoFocus
+              placeholder="Your current password"
               invalid={Boolean(error)}
               describedBy={error ? errorId : undefined}
             />
@@ -124,6 +125,7 @@ export function ChangePasswordDialog({ open, onOpenChange, email }: ChangePasswo
               value={next}
               onChange={setNext}
               autoComplete="new-password"
+              placeholder="At least 8 characters"
               hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
               invalid={Boolean(error)}
               describedBy={error ? errorId : undefined}
@@ -133,6 +135,7 @@ export function ChangePasswordDialog({ open, onOpenChange, email }: ChangePasswo
               value={confirm}
               onChange={setConfirm}
               autoComplete="new-password"
+              placeholder="Repeat the new password"
               invalid={Boolean(error)}
               describedBy={error ? errorId : undefined}
             />

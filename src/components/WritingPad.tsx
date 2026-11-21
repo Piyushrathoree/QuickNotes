@@ -223,7 +223,7 @@ export function WritingPad({ store, handleRef }: WritingPadProps) {
             onChange={handleTitleChange}
             onKeyDown={handleTitleKeyDown}
             onPaste={handleTitlePaste}
-            className="block h-14 w-full text-ellipsis bg-transparent pt-4 text-[1.75rem] leading-[36px] font-extrabold tracking-[-0.01em] text-secondary-foreground caret-brand outline-none placeholder:font-medium placeholder:text-muted-foreground"
+            className="block h-14 w-full text-ellipsis bg-transparent pt-4 text-[1.75rem] leading-[36px] font-semibold tracking-[-0.01em] text-secondary-foreground caret-brand outline-none placeholder:font-medium placeholder:text-muted-foreground"
           />
         </div>
 

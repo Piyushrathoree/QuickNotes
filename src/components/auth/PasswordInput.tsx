@@ -11,6 +11,7 @@ interface PasswordInputProps {
   onChange: (value: string) => void;
   autoComplete: "current-password" | "new-password";
   autoFocus?: boolean;
+  placeholder?: string;
   hint?: ReactNode;
   invalid?: boolean;
   describedBy?: string;
@@ -24,6 +25,7 @@ export function PasswordInput({
   onChange,
   autoComplete,
   autoFocus,
+  placeholder,
   hint,
   invalid,
   describedBy,
@@ -48,6 +50,7 @@ export function PasswordInput({
           name={autoComplete === "new-password" ? "new-password" : "password"}
           autoComplete={autoComplete}
           autoFocus={autoFocus}
+          placeholder={placeholder}
           required
           value={value}
           onChange={(event) => onChange(event.target.value)}

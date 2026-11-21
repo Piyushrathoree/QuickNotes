@@ -56,6 +56,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           onChange={setPassword}
           autoComplete="new-password"
           autoFocus
+          placeholder="At least 8 characters"
           hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
           invalid={Boolean(error)}
           describedBy={error ? errorId : undefined}
@@ -65,6 +66,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           value={confirm}
           onChange={setConfirm}
           autoComplete="new-password"
+          placeholder="Repeat the new password"
           invalid={Boolean(error)}
           describedBy={error ? errorId : undefined}
         />

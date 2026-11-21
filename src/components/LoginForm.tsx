@@ -102,6 +102,7 @@ export function LoginForm({ notice }: { notice?: string }) {
               type="text"
               name="name"
               autoComplete="name"
+              placeholder="Your name"
               value={name}
               onChange={(event) => setName(event.target.value)}
               className={authInputClass}
@@ -133,6 +134,7 @@ export function LoginForm({ notice }: { notice?: string }) {
           value={password}
           onChange={setPassword}
           autoComplete={isSignUp ? "new-password" : "current-password"}
+          placeholder={isSignUp ? "At least 8 characters" : "Enter your password"}
           hint={isSignUp ? `At least ${MIN_PASSWORD_LENGTH} characters.` : undefined}
           invalid={Boolean(error)}
           describedBy={error ? errorId : undefined}
