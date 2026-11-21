@@ -51,7 +51,7 @@ export const site = {
     "Live Markdown: bullets, numbered lists, checklists, headings, horizontal rules, quotes, links and inline styles",
     "Fenced code blocks with syntax highlighting and a copy button",
     "Save any note as a Markdown (.md) or plain text (.txt) file",
-    "Three writing fonts: handwritten, sans-serif and serif",
+    "Four writing fonts: Hand, Sans, Serif and Mono",
     "Light and dark themes",
     "Optional free account (email and password): press Save to keep notes in the cloud and open them on any device",
     "Works on phones, tablets and desktops",

@@ -53,7 +53,7 @@ export const faqs: readonly Faq[] = [
   {
     question: "Can I change the font or use dark mode?",
     answer:
-      "Yes. Choose a handwritten, sans-serif or serif writing font from the Writing font menu at the bottom of the sidebar, and switch between light and dark themes with the sun and moon button.",
+      "Yes. Choose Hand, Sans, Serif or Mono from the Writing font menu at the bottom of the sidebar, and switch between light and dark themes with the sun and moon button.",
   },
   {
     question: "What if I forget my password?",
