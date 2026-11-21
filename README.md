@@ -47,3 +47,7 @@ Set these values in Vercel under **Project → Settings → Environment Variable
 - `pnpm db:generate` — generate Drizzle migrations.
 - `pnpm db:migrate` — apply Drizzle migrations.
 - `pnpm db:studio` — open Drizzle Studio.
+
+## License
+
+[MIT](LICENSE)
