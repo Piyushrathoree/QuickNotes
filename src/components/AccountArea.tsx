@@ -1,42 +1,57 @@
 "use client";
 
-import { useRef, useState, type ReactElement } from "react";
+import { useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Login03Icon, Logout01Icon, SquareLock02Icon, TextFontIcon, UnfoldMoreIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { HelpCircleIcon, Logout01Icon, SquareLock02Icon, UnfoldMoreIcon, UserIcon } from "@hugeicons/core-free-icons";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
-import { FontPopover, fontOptions, footerRowClass } from "@/components/FontPopover";
+import { WritingFontRow } from "@/components/FontPopover";
 import { Icon } from "@/components/Icon";
+import { ThemeRow } from "@/components/ThemeButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { initialsFor, type UserDisplay } from "@/components/userDisplay";
 import { signOut, useSession } from "@/lib/auth-client";
 import { clearCurrentUserCloudCache, countUnsavedCloudNotes } from "@/lib/store/cloudCache";
-import { usePrefs } from "@/lib/store/prefs";
 import { cn } from "@/lib/utils";
 
-/** Icon-only rail button: 44px hit area, same radius and states as the sidebar's icon buttons. */
-const railButtonClass =
-  "grid size-11 shrink-0 place-items-center rounded-lg text-secondary-foreground outline-none transition-colors duration-150 hover:bg-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-selected data-[state=open]:text-foreground";
+/** Profile trigger in the sidebar footer: 52px tall, 10px radius, open state shown with the selected fill. */
+const footerRowClass =
+  "group flex h-13 w-full min-w-0 items-center gap-2.5 rounded-[10px] px-2 text-left outline-none transition-colors duration-150 hover:bg-hover focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-selected";
 
-/** The Font row. Same look for guests and signed-in users: icon, label, current font in its own face, chevron. */
-function WritingFontRow() {
-  const { prefs } = usePrefs();
-  const currentFont = fontOptions.find((option) => option.value === prefs.font) ?? fontOptions[0];
+/** Rail trigger: a 40px hit area with the avatar inside. */
+const railTriggerClass =
+  "group grid size-10 place-items-center rounded-[10px] outline-none transition-colors duration-150 hover:bg-hover focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-selected";
+
+/** Menu row: 40px tall (44px on touch), 10px radius, one leading icon. */
+const menuRowClass =
+  "flex h-10 w-full items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm text-secondary-foreground outline-none transition-colors duration-150 hover:bg-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:h-11";
+
+/** Avatar: the user's image or initials, or a neutral circle with a person glyph for guests. The ring is a soft halo. */
+function UserAvatar({ user, className }: { user: UserDisplay | null; className?: string }) {
+  if (!user) {
+    return (
+      <span
+        aria-hidden="true"
+        className={cn(
+          "grid size-8 shrink-0 place-items-center rounded-full bg-selected text-muted-foreground ring-2 ring-hover",
+          className,
+        )}
+      >
+        <Icon icon={UserIcon} />
+      </span>
+    );
+  }
   return (
-    <FontPopover side="top" align="start">
-      <button type="button" className={cn(footerRowClass, "px-3")}>
-        <Icon icon={TextFontIcon} className="text-muted-foreground" />
-        <span className="sb-fade min-w-0 flex-1 truncate font-medium">Writing font</span>
-        <span className="sb-fade shrink-0 truncate text-muted-foreground" style={{ fontFamily: currentFont.fontFamily }}>
-          {currentFont.label}
-        </span>
-        <Icon icon={UnfoldMoreIcon} className="sb-fade text-muted-foreground" />
-      </button>
-    </FontPopover>
+    <Avatar className={cn("size-8 ring-2 ring-hover", className)}>
+      {user.image && <AvatarImage src={user.image} alt="" />}
+      <AvatarFallback className="bg-selected text-xs font-medium text-secondary-foreground">
+        {initialsFor(user)}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
@@ -45,13 +60,18 @@ function pluralNotes(count: number): string {
 }
 
 interface AccountMenuProps {
-  user: UserDisplay;
+  /** null for a guest. */
+  user: UserDisplay | null;
   side: "top" | "right";
   align: "start" | "end";
   children: ReactElement;
 }
 
-/** Account popover: user header, Change password and Sign out. Dialogs sit outside the popover so they outlive it. */
+/**
+ * The profile menu: a compact list (header, sign-in for guests, writing font, theme, help, and for signed-in users
+ * change password and sign out). It renders in a portal, so the sidebar's overflow never clips it. Dialogs sit
+ * outside the popover so they outlive it.
+ */
 function AccountMenu({ user, side, align, children }: AccountMenuProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,6 +79,7 @@ function AccountMenu({ user, side, align, children }: AccountMenuProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [unsavedCount, setUnsavedCount] = useState(0);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   async function performSignOut() {
     await signOut();
@@ -79,6 +100,24 @@ function AccountMenu({ user, side, align, children }: AccountMenuProps) {
     void performSignOut();
   }
 
+  // Up/Down/Home/End move between the visible rows. Rows inside a collapsed list are inert, so they are skipped.
+  function onMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.defaultPrevented) return;
+    const keys = ["ArrowDown", "ArrowUp", "Home", "End"];
+    if (!keys.includes(event.key)) return;
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>("[data-menu-item]") ?? []).filter(
+      (item) => item.closest("[inert]") === null,
+    );
+    if (items.length === 0) return;
+    event.preventDefault();
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    let next = 0;
+    if (event.key === "ArrowDown") next = current < 0 ? 0 : (current + 1) % items.length;
+    else if (event.key === "ArrowUp") next = current < 0 ? items.length - 1 : (current - 1 + items.length) % items.length;
+    else if (event.key === "End") next = items.length - 1;
+    items[next]?.focus();
+  }
+
   return (
     <>
       <Popover open={menuOpen} onOpenChange={setMenuOpen}>
@@ -87,41 +126,93 @@ function AccountMenu({ user, side, align, children }: AccountMenuProps) {
           side={side}
           align={align}
           sideOffset={8}
-          collisionPadding={12}
-          className="w-[min(calc(17rem_-_1.25rem),20rem)] rounded-[12px] border border-border bg-pad p-3 text-foreground shadow-menu"
+          collisionPadding={side === "top" ? 4 : 12}
+          className={cn(
+            side === "top" ? "w-(--radix-popover-trigger-width)" : "w-[264px]",
+            "max-h-(--radix-popover-content-available-height) overflow-y-auto rounded-[14px] border border-border bg-pad p-1.5 text-foreground shadow-menu",
+            "data-[state=open]:duration-140 data-[state=closed]:duration-140",
+          )}
         >
-          <div className="flex items-center gap-2.5 px-1 pb-3">
-            <Avatar className="size-9">
-              {user.image && <AvatarImage src={user.image} alt="" />}
-              <AvatarFallback className="bg-selected text-xs font-medium text-secondary-foreground">
-                {initialsFor(user)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{user.name || "Signed in"}</p>
-              {user.email && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
+          <div ref={menuRef} onKeyDown={onMenuKeyDown} role="group" aria-label="Account" className="flex flex-col">
+            <div className="flex items-center gap-3 px-2.5 pt-1.5 pb-2.5">
+              <UserAvatar user={user} className="size-9" />
+              <div className="min-w-0">
+                {user ? (
+                  <>
+                    <p className="truncate text-sm font-medium text-foreground">{user.name || "Signed in"}</p>
+                    {user.email && <p className="truncate text-xs text-muted-foreground">{user.email}</p>}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium text-foreground">Guest</p>
+                    <p className="text-xs text-muted-foreground">Not signed in</p>
+                  </>
+                )}
+              </div>
             </div>
+
+            {!user && (
+              <>
+                <div className="px-1 pb-1">
+                  <Button asChild data-menu-item className="h-10 w-full rounded-[10px] text-sm">
+                    <Link href="/login" onClick={() => setMenuOpen(false)}>
+                      Sign in
+                    </Link>
+                  </Button>
+                </div>
+                <Link
+                  href="/login?mode=signup"
+                  data-menu-item
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(menuRowClass, "justify-center text-muted-foreground")}
+                >
+                  Create account
+                </Link>
+              </>
+            )}
+
+            <div role="separator" className="mx-2 my-1.5 h-px bg-border" />
+
+            <WritingFontRow />
+            <ThemeRow />
+
+            <div role="separator" className="mx-2 my-1.5 h-px bg-border" />
+
+            <Link href="/about" data-menu-item onClick={() => setMenuOpen(false)} className={menuRowClass}>
+              <Icon icon={HelpCircleIcon} className="text-muted-foreground" />
+              Help &amp; shortcuts
+            </Link>
+            {user && (
+              <>
+                <button
+                  type="button"
+                  data-menu-item
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setPasswordOpen(true);
+                  }}
+                  className={menuRowClass}
+                >
+                  <Icon icon={SquareLock02Icon} className="text-muted-foreground" />
+                  Change password
+                </button>
+                <div role="separator" className="mx-2 my-1.5 h-px bg-border" />
+                <button
+                  type="button"
+                  data-menu-item
+                  onClick={requestSignOut}
+                  className={cn(menuRowClass, "hover:bg-destructive/10 hover:text-destructive")}
+                >
+                  <Icon icon={Logout01Icon} className="text-muted-foreground" />
+                  Sign out
+                </button>
+              </>
+            )}
           </div>
-          <Separator className="mb-2.5" />
-          <button
-            type="button"
-            onClick={() => {
-              setMenuOpen(false);
-              setPasswordOpen(true);
-            }}
-            className={footerRowClass}
-          >
-            <Icon icon={SquareLock02Icon} />
-            Change password
-          </button>
-          <button type="button" onClick={requestSignOut} className={footerRowClass}>
-            <Icon icon={Logout01Icon} />
-            Sign out
-          </button>
         </PopoverContent>
       </Popover>
 
-      {user.email && <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} email={user.email} />}
+      {user?.email && <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} email={user.email} />}
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent
@@ -164,8 +255,8 @@ interface AccountAreaProps {
 }
 
 /**
- * Bottom of the sidebar. Guests: sign-in card above the Font row. Signed in: Font row, hairline, account row.
- * Collapsed rail: Font icon above the account (or sign-in) icon. Renders nothing while the session loads.
+ * The sidebar footer: one profile row that opens the account menu. Collapsed rail: the avatar alone opens the same
+ * menu to the right. Renders nothing while the session loads.
  */
 export function AccountArea({ variant = "full" }: AccountAreaProps) {
   const { data: session, isPending } = useSession();
@@ -175,74 +266,34 @@ export function AccountArea({ variant = "full" }: AccountAreaProps) {
 
   if (variant === "rail") {
     return (
-      <div className="-mx-1 flex flex-col items-center gap-1">
-        <FontPopover side="right" align="end">
-          <button type="button" aria-label="Writing font" title="Writing font" className={railButtonClass}>
-            <Icon icon={TextFontIcon} />
-          </button>
-        </FontPopover>
-        {user ? (
-          <AccountMenu user={user} side="right" align="end">
-            <button type="button" aria-label="Account" title="Account" className={railButtonClass}>
-              <Avatar className="size-8">
-                {user.image && <AvatarImage src={user.image} alt="" />}
-                <AvatarFallback className="bg-selected text-xs font-medium text-secondary-foreground">
-                  {initialsFor(user)}
-                </AvatarFallback>
-              </Avatar>
-            </button>
-          </AccountMenu>
-        ) : (
-          <Link href="/login" aria-label="Sign in" title="Sign in" className={railButtonClass}>
-            <Icon icon={Login03Icon} />
-          </Link>
-        )}
-      </div>
-    );
-  }
-
-  if (user) {
-    return (
-      <div className="flex flex-col gap-1">
-        <WritingFontRow />
-        <div role="separator" className="mx-1 my-1.5 h-px bg-border" />
-        <AccountMenu user={user} side="top" align="start">
-          <button type="button" className={cn(footerRowClass, "h-12 px-1.5")}>
-            <Avatar className="size-8">
-              {user.image && <AvatarImage src={user.image} alt="" />}
-              <AvatarFallback className="bg-selected text-xs font-medium text-secondary-foreground">
-                {initialsFor(user)}
-              </AvatarFallback>
-            </Avatar>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium text-foreground">{user.name || "Signed in"}</span>
-              {user.email && <span className="block truncate text-xs text-muted-foreground">{user.email}</span>}
-            </span>
-          </button>
-        </AccountMenu>
-      </div>
+      <AccountMenu user={user} side="right" align="end">
+        <button type="button" aria-label={user ? "Account" : "Guest account"} title={user ? "Account" : "Guest"} className={railTriggerClass}>
+          <UserAvatar user={user} />
+        </button>
+      </AccountMenu>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-2 px-1">
-        <p className="text-[13px] leading-5 text-secondary-foreground">
-          Sign in to save your notes to the cloud and open them on any device
-        </p>
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-8 w-full justify-center border-foreground/25 bg-pad px-3 text-foreground shadow-xs hover:bg-hover"
-        >
-          <Link href="/login">
-            <Icon icon={Login03Icon} />
-            Sign in
-          </Link>
-        </Button>
-      </div>
-      <WritingFontRow />
-    </div>
+    <AccountMenu user={user} side="top" align="start">
+      <button type="button" className={footerRowClass}>
+        <UserAvatar user={user} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-foreground">
+            {user ? user.name || "Signed in" : "Guest"}
+          </span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {user ? user.email || "" : "Sign in to save your notes"}
+          </span>
+        </span>
+        <HugeiconsIcon
+          icon={UnfoldMoreIcon}
+          size={16}
+          strokeWidth={1.5}
+          aria-hidden="true"
+          className="shrink-0 text-muted-foreground transition-[transform,opacity] duration-150 group-data-[state=open]:rotate-180 group-data-[state=open]:opacity-70"
+        />
+      </button>
+    </AccountMenu>
   );
 }

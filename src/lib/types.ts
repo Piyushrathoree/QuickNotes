@@ -23,7 +23,7 @@ export interface UiPrefs {
   previewOpen: boolean;
   sidebarOpen: boolean;
   theme: "light" | "dark";
-  font: "draw" | "sans" | "serif";
+  font: "hand" | "sans" | "serif" | "mono";
 }
 
 export interface NoteStore {

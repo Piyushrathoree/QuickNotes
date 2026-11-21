@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Delete02Icon } from "@hugeicons/core-free-icons";
 import { relativeTime } from "@/components/format";
 import { Icon } from "@/components/Icon";
@@ -23,16 +23,23 @@ interface NoteRowProps {
   now: number;
   active: boolean;
   unsaved: boolean;
+  /** True for a row that appears after the list has settled: it fades in once, on mount. */
+  enter: boolean;
   onPick: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
 // Plain props only, so a row re-renders when its own title, time, active or unsaved state changes, not on every keystroke.
-const NoteRow = memo(function NoteRow({ id, title, updatedAt, now, active, unsaved, onPick, onDelete }: NoteRowProps) {
+// One line per note: the title. The relative time lives in the tooltip; the trash icon shows on hover or focus.
+const NoteRow = memo(function NoteRow({ id, title, updatedAt, now, active, unsaved, enter, onPick, onDelete }: NoteRowProps) {
+  const when = now > 0 ? relativeTime(updatedAt, now) : "";
+  // Captured at mount, so a later change of the flag never replays the fade on a row that is already on screen.
+  const [fadeIn] = useState(enter);
   return (
     <li
       className={cn(
-        "group flex items-center rounded-md transition-colors duration-150",
+        "group flex h-9 items-center rounded-lg transition-colors duration-150 pointer-coarse:h-11",
+        fadeIn && "sb-row-in",
         active ? "bg-selected" : "hover:bg-hover",
       )}
     >
@@ -40,21 +47,23 @@ const NoteRow = memo(function NoteRow({ id, title, updatedAt, now, active, unsav
         type="button"
         onClick={() => onPick(id)}
         aria-current={active ? "true" : undefined}
-        className="min-w-0 flex-1 rounded-md px-2.5 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title={when || undefined}
+        className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-lg px-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <span className="block truncate text-sm font-medium text-foreground">{title}</span>
-        <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="truncate">{now > 0 ? relativeTime(updatedAt, now) : ""}</span>
-          {unsaved && (
-            <span
-              title="Unsaved changes"
-              className="inline-flex shrink-0 items-center"
-            >
-              <span aria-hidden="true" className="size-2 rounded-full bg-brand ring-2 ring-brand-soft" />
-              <span className="sr-only">Unsaved changes</span>
-            </span>
+        <span
+          className={cn(
+            "min-w-0 flex-1 truncate text-sm",
+            active ? "text-foreground" : "text-secondary-foreground",
           )}
+        >
+          {title}
         </span>
+        {unsaved && (
+          <span className="inline-flex shrink-0 items-center" title="Unsaved changes">
+            <span aria-hidden="true" className="size-2 rounded-full bg-brand" />
+            <span className="sr-only">Unsaved changes</span>
+          </span>
+        )}
       </button>
       <button
         type="button"
@@ -71,12 +80,17 @@ const NoteRow = memo(function NoteRow({ id, title, updatedAt, now, active, unsav
 export const NoteList = memo(function NoteList({ notes, activeId, ready, onPick, onDelete }: NoteListProps) {
   // Changes once a minute at most, so only the rows' time labels are touched by it.
   const now = useNow();
+  // Rows that mount after the first settled render fade in. The first list, shown with the page, does not.
+  const settled = useRef(false);
+  useEffect(() => {
+    if (ready && notes.length > 0) settled.current = true;
+  });
 
   if (!ready) {
     return (
-      <div className="flex flex-col gap-1 px-0.5" aria-hidden="true">
+      <div className="flex flex-col gap-1" aria-hidden="true">
         {[0, 1, 2].map((row) => (
-          <div key={row} className="h-12 animate-pulse rounded-md bg-hover" />
+          <div key={row} className="h-9 animate-pulse rounded-lg bg-hover" />
         ))}
       </div>
     );
@@ -91,7 +105,7 @@ export const NoteList = memo(function NoteList({ notes, activeId, ready, onPick,
   }
 
   return (
-    <ul className="flex flex-col gap-0.5">
+    <ul className="flex flex-col gap-1">
       {notes.map((note) => (
         <NoteRow
           key={note.id}
@@ -101,6 +115,7 @@ export const NoteList = memo(function NoteList({ notes, activeId, ready, onPick,
           now={now}
           active={note.id === activeId}
           unsaved={note.unsaved === true}
+          enter={settled.current}
           onPick={onPick}
           onDelete={onDelete}
         />

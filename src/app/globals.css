@@ -1,13 +1,16 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Design tokens. light-dark() follows color-scheme, which data-theme sets on <html>. */
+/* Design tokens. light-dark() follows color-scheme, which data-theme sets on <html>. Light is the default; the OS
+   colour scheme is never read. */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   --canvas: light-dark(#efebdf, #242423);
   --sidebar: light-dark(#e9e4d5, #1d1d1c);
   --pad: light-dark(#f8f5ec, #2e2e2c);
+  /* In-app logo tile: brand ink in light, a lifted ink in dark so the mark stays visible on the dark sidebar. */
+  --logo-tile: light-dark(#2b2a27, #3d3c38);
   --text: light-dark(#141413, #f5f4ed);
   --text-secondary: light-dark(#3d3d3a, #c2c0b6);
   /* Light value is darker than SPEC's #73726C so it stays AA (4.5:1) on every tinted surface, including the selected row
@@ -42,16 +45,7 @@
   --elev-overlay: 0 20px 48px -12px rgb(20 20 19 / 0.25);
 
   /* Writing font follows the saved pref. data-font is set on <html> before paint (see layout.tsx). */
-  --write-font: var(--font-shantell), ui-rounded, system-ui, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --elev-xs: 0 1px 2px rgb(0 0 0 / 0.3);
-    --elev-pad: 0 1px 2px rgb(0 0 0 / 0.25), 0 14px 36px -12px rgb(0 0 0 / 0.5);
-    --elev-menu: 0 12px 34px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.3);
-    --elev-overlay: 0 24px 56px -12px rgb(0 0 0 / 0.6);
-  }
+  --write-font: var(--font-patrick-hand), cursive;
 }
 
 :root[data-theme="dark"] {
@@ -75,6 +69,10 @@
 
 :root[data-font="serif"] {
   --write-font: var(--font-plex-serif), Georgia, serif;
+}
+
+:root[data-font="mono"] {
+  --write-font: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 @theme inline {
@@ -162,11 +160,23 @@ body {
 }
 
 /* Desktop sidebar. One element animates its width; the data-sidebar attribute on <html> (set before first paint
-   by layout.tsx) decides the state, so a reload never animates. Rules are unlayered on purpose: they must beat utilities. Content keeps fixed widths and fades, so text
-   does not wrap while the width changes. Icons sit in a 36px box at the same x in both states. */
+   by layout.tsx) decides the state, so a reload never animates. Rules are unlayered on purpose: they must beat utilities.
+   --sb-inset is the side inset (12px open, 8px rail). It is registered so it animates with the width, and the sections
+   read it through .sb-inset. Icons sit in a 40px column that is centred in both states. */
+@property --sb-inset {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0.75rem;
+}
+
+/* Layout containment: the sidebar's own layout never invalidates the pad, and the pad's never reaches the sidebar. */
 .sb-aside {
+  --sb-inset: 0.75rem;
   width: 17rem;
-  transition: width 180ms cubic-bezier(0.2, 0, 0, 1);
+  contain: layout style;
+  transition:
+    width 220ms cubic-bezier(0.2, 0, 0, 1),
+    --sb-inset 220ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .sb-aside > * {
@@ -174,17 +184,27 @@ body {
   flex-shrink: 0;
 }
 
-.sb-fade {
-  transition:
-    opacity 150ms ease-out,
-    transform 180ms cubic-bezier(0.2, 0, 0, 1),
-    visibility 180ms;
+.sb-inset {
+  padding-inline: var(--sb-inset, 0.75rem);
 }
 
+.sb-fade {
+  transition:
+    opacity 160ms ease-out,
+    transform 220ms cubic-bezier(0.2, 0, 0, 1),
+    visibility 220ms;
+}
+
+/* New note: a soft boxed row, 40px tall, full width. Collapsed it becomes a 36px square centred in the 40px icon
+   column (2px margin), so its icon sits where the rail's other icons sit. */
 .sb-new {
   width: 100%;
+  margin-left: 0;
+  padding-left: 0.25rem;
   transition:
-    width 180ms cubic-bezier(0.2, 0, 0, 1),
+    width 220ms cubic-bezier(0.2, 0, 0, 1),
+    padding-left 220ms cubic-bezier(0.2, 0, 0, 1),
+    margin-left 220ms cubic-bezier(0.2, 0, 0, 1),
     background-color 150ms ease-out;
 }
 
@@ -193,6 +213,7 @@ body {
 }
 
 html[data-sidebar="collapsed"] .sb-aside {
+  --sb-inset: 0.5rem;
   width: 3.5rem;
 }
 
@@ -204,10 +225,40 @@ html[data-sidebar="collapsed"] .sb-aside .sb-fade {
 
 html[data-sidebar="collapsed"] .sb-aside .sb-new {
   width: 2.25rem;
+  margin-left: 0.125rem;
+  padding-left: 0;
 }
 
 html[data-sidebar="collapsed"] .sb-aside .sb-rail-only {
   display: flex;
+}
+
+/* A note row that appears after the list has settled. Opacity only, so no text moves. */
+.sb-row-in {
+  animation: sb-row-in 160ms ease-out both;
+}
+
+@keyframes sb-row-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Theme change: the big surfaces (sidebar, pad, phone bar, drawer) fade their background and border for 180ms. Only
+   those few roots transition. Colour is never transitioned here: text inherits it, so a colour transition on a
+   container restyles every descendant (the sidebar's icon paths, the editor's lines) on every frame. Text colours
+   switch at once, as they did before the fade. The class is added on a user change only, never on first paint. */
+html.theme-animating .sb-aside,
+html.theme-animating .sb-aside *,
+html.theme-animating .shell-main > *,
+html.theme-animating .shell-phone-only,
+html.theme-animating [data-slot="sheet-content"] {
+  transition:
+    background-color 180ms ease-out,
+    border-color 180ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -241,6 +292,7 @@ html[data-sidebar="collapsed"] .sb-aside .sb-rail-only {
   flex: 1 1 auto;
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom);
+  contain: layout style;
 }
 
 /* Phones: the pad is full-bleed under the top bar, so it drops its card frame. */

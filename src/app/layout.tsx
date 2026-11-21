@@ -1,13 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, IBM_Plex_Sans, IBM_Plex_Serif, Shantell_Sans } from "next/font/google";
+import { Geist, Geist_Mono, IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Serif, Patrick_Hand } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppToaster } from "@/components/AppToaster";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-// UI chrome uses Geist, code uses Geist Mono. The three writing faces are picked by the font pref.
-// Writing faces load the weights the editor and titles use (400 body, 600/700/800 for bold and headings), each with
-// its italic, since *emphasis* is italic. The browser only downloads a face when text actually uses it.
+// UI chrome uses Geist; code and monospaced writing use Geist Mono. Other writing faces follow the saved font preference.
+// The app only loads the weight ranges used in the editor, and self-hosts each font in the build.
 const geist = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -21,10 +20,17 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const shantellSans = Shantell_Sans({
-  variable: "--font-shantell",
+const patrickHand = Patrick_Hand({
+  variable: "--font-patrick-hand",
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+  weight: "400",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -91,10 +97,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   interactiveWidget: "resizes-content",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#efebdf" },
-    { media: "(prefers-color-scheme: dark)", color: "#242423" },
-  ],
+  themeColor: "#efebdf",
 };
 
 // Applies the saved theme and font before first paint, so there is no flash.
@@ -102,12 +105,14 @@ const appearanceBootstrap = `
   try {
     const saved = window.localStorage.getItem("notes:ui:v1");
     const prefs = saved ? JSON.parse(saved) : undefined;
-    // A stored light or dark choice wins. Otherwise (first visit, or a legacy "system" value) follow the OS once.
-    const stored = prefs && prefs.theme;
-    const dark = stored === "dark" || (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    // Only an explicit stored "dark" makes the app dark. Everything else (first visit, "light", "system", invalid) is light.
+    const dark = prefs && prefs.theme === "dark";
     document.documentElement.dataset.theme = dark ? "dark" : "light";
+    // Pages without the app shell (about, login) keep the light theme-color unless it is set here.
+    if (dark) document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => { meta.content = "#242423"; });
     const font = prefs && prefs.font;
-    document.documentElement.dataset.font = font === "sans" || font === "serif" ? font : "draw";
+    document.documentElement.dataset.font =
+      font === "sans" || font === "serif" || font === "mono" ? font : "hand";
     // Desktop sidebar width is driven by this attribute (see .sb-aside in globals.css), so it is right before first paint.
     document.documentElement.dataset.sidebar = prefs && prefs.sidebarOpen === false ? "collapsed" : "open";
   } catch {}
@@ -117,8 +122,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html
       lang="en"
-      className={`${geist.variable} ${geistMono.variable} ${shantellSans.variable} ${plexSans.variable} ${plexSerif.variable}`}
-      data-font="draw"
+      className={`${geist.variable} ${geistMono.variable} ${patrickHand.variable} ${plexMono.variable} ${plexSans.variable} ${plexSerif.variable}`}
+      data-font="hand"
       suppressHydrationWarning
     >
       <head>

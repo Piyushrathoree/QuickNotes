@@ -9,12 +9,12 @@ export const UI_PREFS_SCHEMA_VERSION = 1;
 export const defaultUiPrefs: UiPrefs = {
   previewOpen: false,
   sidebarOpen: true,
-  // Placeholder for server rendering. In the browser an unset theme follows the OS (see unsetPrefs).
+  // The app is light until the visitor picks dark with the theme toggle. The OS colour scheme is never read.
   theme: "light",
-  font: "draw",
+  font: "hand",
 };
 
-const FONT_OPTIONS: readonly UiPrefs["font"][] = ["draw", "sans", "serif"];
+const FONT_OPTIONS: readonly UiPrefs["font"][] = ["hand", "sans", "serif", "mono"];
 
 function isFont(value: unknown): value is UiPrefs["font"] {
   return FONT_OPTIONS.some((option) => option === value);
@@ -24,15 +24,9 @@ function isTheme(value: unknown): value is UiPrefs["theme"] {
   return value === "light" || value === "dark";
 }
 
-/** The OS colour scheme. It only fills in a theme the visitor has not picked yet. */
-function systemTheme(): UiPrefs["theme"] {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-/** Prefs for a visitor with nothing stored yet. A missing, invalid or legacy "system" theme counts as unset. */
+/** Prefs for a visitor with nothing stored yet. A missing, invalid or legacy "system" theme is light. */
 function unsetPrefs(): UiPrefs {
-  return { ...defaultUiPrefs, theme: systemTheme() };
+  return { ...defaultUiPrefs };
 }
 
 const subscribers = new Set<() => void>();
@@ -65,7 +59,7 @@ function parseUiPrefs(raw: string | null): UiPrefs {
         typeof candidate.sidebarOpen === "boolean"
           ? candidate.sidebarOpen
           : defaultUiPrefs.sidebarOpen,
-      theme: isTheme(candidate.theme) ? candidate.theme : systemTheme(),
+      theme: isTheme(candidate.theme) ? candidate.theme : defaultUiPrefs.theme,
       font: isFont(candidate.font) ? candidate.font : defaultUiPrefs.font,
     };
   } catch {
@@ -92,7 +86,7 @@ export function writeUiPrefs(prefs: UiPrefs): boolean {
   const next: UiPrefs = {
     previewOpen: Boolean(prefs.previewOpen),
     sidebarOpen: Boolean(prefs.sidebarOpen),
-    theme: isTheme(prefs.theme) ? prefs.theme : systemTheme(),
+    theme: isTheme(prefs.theme) ? prefs.theme : defaultUiPrefs.theme,
     font: isFont(prefs.font) ? prefs.font : defaultUiPrefs.font,
   };
   cachedSnapshot = next;

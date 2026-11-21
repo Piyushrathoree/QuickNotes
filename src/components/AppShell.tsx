@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { flushSync } from "react-dom";
-import Link from "next/link";
 import { toast } from "sonner";
-import { HelpCircleIcon, Menu01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons";
+import { Menu01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons";
 import { applyFont, applyTheme } from "@/components/appearance";
+import { LogoMark } from "@/components/brand/LogoMark";
 import { Icon } from "@/components/Icon";
 import { NotesSidebar } from "@/components/NotesSidebar";
 import { SaveButton } from "@/components/SaveButton";
@@ -88,7 +88,7 @@ export function AppShell() {
   }, [setPrefs]);
 
   // The browser chrome (Android task switcher, iOS standalone status bar) follows the theme the user picked in the
-  // app, not only the OS setting. The Next metadata emits two theme-color tags keyed by the OS scheme; set both.
+  // app. The Next viewport metadata emits one light theme-color tag; this effect swaps its colour for dark.
   useEffect(() => {
     if (!hydrated) return;
     const color = theme === "dark" ? site.colors.dark : site.colors.light;
@@ -197,8 +197,9 @@ export function AppShell() {
             <button type="button" onClick={() => setSheetOpen(true)} aria-label="Open notes" className={barButtonClass}>
               <Icon icon={Menu01Icon} />
             </button>
-            <span className="min-w-0 flex-1 truncate pl-0.5 text-[15px] font-semibold tracking-[-0.01em] text-foreground select-none">
-              Quick Notes
+            <span className="flex min-w-0 flex-1 items-center gap-2 pl-0.5 text-[15px] font-semibold tracking-[-0.01em] text-foreground select-none">
+              <LogoMark size={24} tile="var(--logo-tile)" className="shrink-0" />
+              <span className="truncate">Quick Notes</span>
             </span>
             <SaveButton store={store} compact />
             <button type="button" onClick={newNote} aria-label="New note" className={cn(barButtonClass, "text-brand")}>
@@ -230,19 +231,11 @@ export function AppShell() {
           </SheetHeader>
           {/* The drawer's one wordmark and its one theme toggle. The notes header below only keeps the About link. */}
           <div className="flex h-12 shrink-0 items-center gap-1 pr-2.5 pl-4">
-            <SheetTitle className="min-w-0 flex-1 truncate text-[15px] font-semibold tracking-[-0.01em] select-none">
-              Quick Notes
+            <SheetTitle className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] select-none">
+              <LogoMark size={24} tile="var(--logo-tile)" className="shrink-0" />
+              <span className="truncate">Quick Notes</span>
             </SheetTitle>
-            {/* A real link (not a button) so crawlers find the About page. Navigating closes the drawer. */}
-            <Link
-              href="/about"
-              aria-label="About Quick Notes, Markdown shortcuts and FAQ"
-              title="About, shortcuts and FAQ"
-              onClick={() => setSheetOpen(false)}
-              className={barButtonClass}
-            >
-              <Icon icon={HelpCircleIcon} />
-            </Link>
+            
             <ThemeButton />
           </div>
           <NotesSidebar

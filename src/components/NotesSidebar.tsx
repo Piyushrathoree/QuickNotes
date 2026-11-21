@@ -1,14 +1,13 @@
 "use client";
 
 import { memo, useSyncExternalStore } from "react";
-import Link from "next/link";
-import { HelpCircleIcon, PencilEdit02Icon, SidebarLeftIcon } from "@hugeicons/core-free-icons";
+import { PencilEdit02Icon, SidebarLeftIcon } from "@hugeicons/core-free-icons";
 import { AccountArea } from "@/components/AccountArea";
+import { LogoMark } from "@/components/brand/LogoMark";
 import { Icon } from "@/components/Icon";
 import { NoteList } from "@/components/NoteList";
-import { ThemeButton } from "@/components/ThemeButton";
 import { iconButtonClass } from "@/components/styles";
-import { Kbd } from "@/components/ui/kbd";
+import { cn } from "@/lib/utils";
 import type { NoteSummary } from "@/lib/types";
 
 const noSubscribe = () => () => undefined;
@@ -40,7 +39,7 @@ interface NotesSidebarProps {
 /**
  * One tree for the desktop sidebar (both widths) and the mobile drawer. Collapsing never swaps components:
  * the parent's data-sidebar attribute drives the widths and the fades (see .sb-aside in globals.css).
- * The icon column is a 36px box at the same x in both states, so icons do not move while the sidebar animates.
+ * Icons sit in a 40px column at the same x in both states, so they do not jump while the sidebar animates.
  */
 export const NotesSidebar = memo(function NotesSidebar({
   notes,
@@ -56,79 +55,75 @@ export const NotesSidebar = memo(function NotesSidebar({
   const collapsible = onToggle !== undefined;
 
   return (
-    <div className="sb-panel flex min-h-0 flex-1 flex-col">
-      {/* Desktop only: the header with the collapse toggle, wordmark, About and theme. The mobile drawer draws its own header. */}
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Desktop only. Expanded: wordmark on the left, collapse toggle on the right. Collapsed: the expand toggle
+          alone in the icon column. The mobile drawer draws its own header. */}
       {collapsible && (
-      <div className="flex h-12 shrink-0 items-center gap-1 px-2.5">
-        {onToggle && (
+        <div className="sb-inset flex h-12 shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={onToggle}
-            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-            aria-expanded={open}
+            aria-label="Expand sidebar"
+            aria-expanded={false}
             aria-controls="notes-sidebar"
-            title={`${open ? "Collapse" : "Expand"} sidebar${shortcuts.toggle ? ` (${shortcuts.toggle})` : ""}`}
-            className={iconButtonClass}
+            title={`Expand sidebar${shortcuts.toggle ? ` (${shortcuts.toggle})` : ""}`}
+            className={cn(iconButtonClass, "sb-rail-only size-10 items-center justify-center")}
           >
             <Icon icon={SidebarLeftIcon} />
           </button>
-        )}
-        <span className="sb-fade min-w-0 flex-1 truncate pl-1 text-[15px] font-semibold tracking-[-0.01em] text-foreground select-none">
-          Quick Notes
-        </span>
-        <span className="sb-fade flex shrink-0 items-center">
-          {/* A real link (not a button) so crawlers find the About page from the app itself. */}
-          <Link
-            href="/about"
-            aria-label="About Quick Notes, Markdown shortcuts and FAQ"
-            title="About, shortcuts and FAQ"
-            className={iconButtonClass}
+          <span className="sb-fade ml-1.5 flex min-w-0 flex-1 items-center gap-2 select-none">
+            <LogoMark size={24} tile="var(--logo-tile)" className="shrink-0" />
+            <span
+              className="truncate text-[16px] leading-none font-semibold tracking-[-0.01em] text-foreground"
+            >
+              Quick Notes
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label="Collapse sidebar"
+            aria-expanded={open}
+            aria-controls="notes-sidebar"
+            title={`Collapse sidebar${shortcuts.toggle ? ` (${shortcuts.toggle})` : ""}`}
+            className={cn(iconButtonClass, "sb-fade")}
           >
-            <Icon icon={HelpCircleIcon} />
-          </Link>
-          <ThemeButton />
-        </span>
-      </div>
+            <Icon icon={SidebarLeftIcon} />
+          </button>
+        </div>
       )}
 
-      <div className="px-2.5">
+      <div className="sb-inset shrink-0 pt-2">
         <button
           type="button"
           onClick={onNewNote}
           aria-label="New note"
           title={shortcuts.newNote ? `New note (${shortcuts.newNote})` : "New note"}
-          className="sb-new flex h-9 items-center overflow-hidden rounded-lg bg-brand-soft text-left text-sm font-medium text-foreground outline-none hover:bg-brand-soft-hover focus-visible:ring-2 focus-visible:ring-ring"
+          className="sb-new flex h-10 items-center overflow-hidden rounded-[10px] bg-brand-soft text-left text-sm font-medium whitespace-nowrap text-foreground outline-none transition-[background-color,width,margin] duration-150 hover:bg-brand-soft-hover focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span className="grid size-9 shrink-0 place-items-center">
             <Icon icon={PencilEdit02Icon} className="text-brand" />
           </span>
-          <span className="sb-fade min-w-0 flex-1 whitespace-nowrap">New note</span>
-          {shortcuts.newNote && <Kbd className="sb-fade mr-2.5 hidden md:inline-flex">{shortcuts.newNote}</Kbd>}
+          <span className="sb-fade min-w-0 flex-1 truncate">New note</span>
         </button>
       </div>
 
-      {/* Collapsed rail only: theme sits under New note, in the same icon column. */}
-      {collapsible && (
-        <div className="sb-rail-only flex-col items-start px-2.5 pt-1">
-          <ThemeButton />
-        </div>
-      )}
+      <div className="sb-fade sb-inset mt-4 shrink-0">
+        <p className="px-2.5 pb-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground">Recents</p>
+      </div>
 
-      <p className="sb-fade mt-5 px-4.5 pb-1.5 text-xs font-medium whitespace-nowrap text-muted-foreground">Notes</p>
-
-      <div className="sb-fade min-h-0 flex-1 overflow-y-auto px-2.5 pb-2">
+      <div className="sb-fade sb-inset min-h-0 flex-1 overflow-y-auto pb-2">
         <NoteList notes={notes} activeId={activeId} ready={ready} onPick={onPick} onDelete={onDelete} />
       </div>
 
-      {/* Pinned to the bottom and never shrinks: the note list above scrolls instead. Expanded: Font row and account
-          row (guests: sign-in card above the Font row). Collapsed: Font and account icons. Both share one grid cell,
-          so the rail sits at the bottom edge and the expanded footer fades out beneath it. */}
-      <div className="grid shrink-0 grid-cols-1 items-end border-t border-border px-2.5 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      {/* One profile row pinned to the bottom, with a hairline above and an 8px inset. Expanded: the account row.
+          Collapsed: the avatar alone in the icon column. Both share one grid cell, so the footer keeps its height. */}
+      <div className="grid shrink-0 grid-cols-1 items-center border-t border-border px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <div className="sb-fade col-start-1 row-start-1 min-w-0">
           <AccountArea />
         </div>
         {collapsible && (
-          <div className="sb-rail-only col-start-1 row-start-1 flex-col items-start">
+          <div className="sb-rail-only col-start-1 row-start-1 items-center">
             <AccountArea variant="rail" />
           </div>
         )}
