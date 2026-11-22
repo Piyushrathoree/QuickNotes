@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Menu01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons";
 import { applyFont, applySize, applyTheme } from "@/components/appearance";
 import { LogoMark } from "@/components/brand/LogoMark";
+import { DeleteNoteDialog } from "@/components/DeleteNoteDialog";
 import { Icon } from "@/components/Icon";
 import { NotesSidebar } from "@/components/NotesSidebar";
 import { SaveButton } from "@/components/SaveButton";
@@ -65,7 +66,16 @@ export function AppShell() {
     [focusPad],
   );
 
+  // Deleting asks first. The dialog holds the note until the user answers.
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string } | null>(null);
+
   const deleteNote = useCallback((id: string) => {
+    const note = storeRef.current.notes.find((candidate) => candidate.id === id);
+    setPendingDelete({ id, title: note?.title ?? "Untitled note" });
+  }, []);
+
+  const confirmDelete = useCallback((id: string) => {
+    setPendingDelete(null);
     storeRef.current.remove(id);
     toast("Note deleted", {
       action: { label: "Undo", onClick: () => storeRef.current.restore(id) },
@@ -259,6 +269,7 @@ export function AppShell() {
           />
         </SheetContent>
       </Sheet>
+      <DeleteNoteDialog note={pendingDelete} onCancel={() => setPendingDelete(null)} onConfirm={confirmDelete} />
     </div>
   );
 }
