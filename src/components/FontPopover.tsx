@@ -31,6 +31,8 @@ const rowClass =
 
 interface ChoiceRowProps<T extends string> {
   label: string;
+  expanded: boolean;
+  onToggle: () => void;
   options: SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
@@ -40,8 +42,7 @@ interface ChoiceRowProps<T extends string> {
  * A menu row that shows the current choice. Clicking it expands an inline radio list. Choosing an option applies it
  * at once and the menu stays open. Each option is set in its own face when it has one (fonts).
  */
-function ChoiceRow<T extends string>({ label, options, value, onChange }: ChoiceRowProps<T>) {
-  const [expanded, setExpanded] = useState(false);
+function ChoiceRow<T extends string>({ label, expanded, onToggle, options, value, onChange }: ChoiceRowProps<T>) {
   const listId = useId();
   const current = options.find((option) => option.value === value) ?? options[0];
 
@@ -52,7 +53,7 @@ function ChoiceRow<T extends string>({ label, options, value, onChange }: Choice
         data-menu-item
         aria-expanded={expanded}
         aria-controls={listId}
-        onClick={() => setExpanded((open) => !open)}
+        onClick={onToggle}
         className={rowClass}
       >
         <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -64,7 +65,10 @@ function ChoiceRow<T extends string>({ label, options, value, onChange }: Choice
         </span>
         <Icon
           icon={ArrowDown01Icon}
-          className={cn("text-muted-foreground transition-transform duration-160 ease-out", expanded && "rotate-180")}
+          className={cn(
+            "text-muted-foreground transition-transform duration-200 ease-(--ease-soft) motion-reduce:transition-none",
+            expanded && "rotate-180",
+          )}
         />
       </button>
 
@@ -73,7 +77,7 @@ function ChoiceRow<T extends string>({ label, options, value, onChange }: Choice
         id={listId}
         inert={!expanded}
         className={cn(
-          "grid transition-[grid-template-rows,opacity] duration-160 ease-out",
+          "grid transition-[grid-template-rows,opacity] duration-200 ease-(--ease-soft) motion-reduce:transition-none",
           expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
         )}
       >
@@ -108,26 +112,42 @@ function ChoiceRow<T extends string>({ label, options, value, onChange }: Choice
   );
 }
 
-/** "Writing font" row for the account menu. Same prefs and applyFont as before. */
-export function WritingFontRow() {
+/**
+ * "Writing font" and "Text size" rows for the account menu. They work as an accordion: opening one closes the other,
+ * so the two lists animate together and the menu never grows taller than one list.
+ */
+export function WritingTypeRows() {
   const { prefs, updatePrefs } = usePrefs();
+  const [open, setOpen] = useState<"font" | "size" | null>(null);
 
   function changeFont(font: Font) {
     updatePrefs({ font });
     applyFont(font);
   }
 
-  return <ChoiceRow label="Writing font" options={fontOptions} value={prefs.font} onChange={changeFont} />;
-}
-
-/** "Text size" row for the account menu. It scales the note text; the ruled grid stays as it is. */
-export function WritingSizeRow() {
-  const { prefs, updatePrefs } = usePrefs();
-
   function changeSize(size: Size) {
     updatePrefs({ size });
     applySize(size);
   }
 
-  return <ChoiceRow label="Text size" options={sizeOptions} value={prefs.size} onChange={changeSize} />;
+  return (
+    <>
+      <ChoiceRow
+        label="Writing font"
+        expanded={open === "font"}
+        onToggle={() => setOpen((current) => (current === "font" ? null : "font"))}
+        options={fontOptions}
+        value={prefs.font}
+        onChange={changeFont}
+      />
+      <ChoiceRow
+        label="Text size"
+        expanded={open === "size"}
+        onToggle={() => setOpen((current) => (current === "size" ? null : "size"))}
+        options={sizeOptions}
+        value={prefs.size}
+        onChange={changeSize}
+      />
+    </>
+  );
 }

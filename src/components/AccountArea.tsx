@@ -15,7 +15,7 @@ import {
   UserIcon,
 } from "@hugeicons/core-free-icons";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
-import { WritingFontRow, WritingSizeRow } from "@/components/FontPopover";
+import { WritingTypeRows } from "@/components/FontPopover";
 import { Icon } from "@/components/Icon";
 import { ThemeRow } from "@/components/ThemeButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -185,8 +185,7 @@ function AccountMenu({ user, side, align, children }: AccountMenuProps) {
 
             <div role="separator" className="mx-2 my-1.5 h-px bg-border" />
 
-            <WritingFontRow />
-            <WritingSizeRow />
+            <WritingTypeRows />
             <ThemeRow />
 
             <div role="separator" className="mx-2 my-1.5 h-px bg-border" />
