@@ -19,7 +19,9 @@ import { formatSize } from "@/components/format";
 import { ExportMenu } from "@/components/ExportMenu";
 import { splitNote } from "@/components/exportNote";
 import { Icon } from "@/components/Icon";
+import { SharePopover, type ShareController } from "@/components/share/SharePopover";
 import { SaveButton, useSaveAction } from "@/components/SaveButton";
+import { useWideScreen } from "@/components/useWideScreen";
 import "./WritingPad.css";
 import { cn } from "@/lib/utils";
 import type { NoteStore } from "@/lib/types";
@@ -75,9 +77,11 @@ const MARGIN_RULE = "clamp(14px, 2.5vw, 32px)";
 interface WritingPadProps {
   store: NoteStore;
   handleRef: RefObject<WritingPadHandle | null>;
+  shareController: ShareController;
 }
 
-export function WritingPad({ store, handleRef }: WritingPadProps) {
+export function WritingPad({ store, handleRef, shareController }: WritingPadProps) {
+  const wide = useWideScreen();
   const titleRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<NoteEditorHandle>(null);
   // Caret to set in the body after a multi-line paste into the title. Applied once the body has re-rendered.
@@ -239,7 +243,7 @@ export function WritingPad({ store, handleRef }: WritingPadProps) {
             style={{ left: MARGIN_RULE }}
           />
 
-          {/* Title row: two 28px rules tall. The title text sits on the second rule. On md+ the Save button sits at its right. */}
+          {/* Title row: two 28px rules tall. The title text sits on the second rule. Share and Save sit at the right. */}
           <div className="relative h-14 shrink-0">
             <input
               ref={titleRef}
@@ -254,9 +258,11 @@ export function WritingPad({ store, handleRef }: WritingPadProps) {
               onKeyDown={handleTitleKeyDown}
               onPaste={handleTitlePaste}
               className="pad-title-reserve block h-14 w-full text-ellipsis bg-transparent pt-4 text-[1.75rem] leading-[36px] font-semibold tracking-[-0.01em] text-secondary-foreground caret-brand outline-none placeholder:font-medium placeholder:text-muted-foreground"
+              style={{ paddingRight: wide ? "12rem" : undefined }}
             />
-            {/* Desktop-class screens only (CSS, same rule as the shell). Phones use the Save button in the top bar. */}
-            <div className="shell-desk-only absolute top-[1.125rem] right-0">
+            {/* Desktop-class screens only (CSS, same rule as the shell). Phones use the top-bar controls. */}
+            <div className="shell-desk-only absolute top-[1.125rem] right-0 flex items-center gap-1">
+              <SharePopover store={store} controller={shareController} />
               <SaveButton store={store} action={save} />
             </div>
           </div>

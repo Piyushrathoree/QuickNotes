@@ -30,6 +30,8 @@ export interface NoteStore {
   mode: "guest" | "account";
   notes: NoteSummary[];
   activeNote: Note | null;
+  /** Whether the active account note has been saved to the database at least once. */
+  activeNotePersisted?: boolean;
   saveState: SaveState;
   ready: boolean;
   /** Active note has edits that are not in the database. Guest mode: true when the note has any content. */

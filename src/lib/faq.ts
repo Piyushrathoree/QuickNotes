@@ -4,7 +4,7 @@ import type { Faq } from "@/lib/structuredData";
  * Shown on /about and mirrored in its FAQPage JSON-LD and in llms.txt, so the visible text, the structured data and
  * what answer engines read always match. Keep every answer true to how the app behaves.
  */
-export const faqs: readonly Faq[] = [
+const generalFaqs: readonly Faq[] = [
   {
     question: "What is Quick Notes?",
     answer:
@@ -66,3 +66,33 @@ export const faqs: readonly Faq[] = [
       "Yes. Quick Notes runs in any modern web browser on phones, tablets and computers, and the layout adapts to small screens.",
   },
 ];
+
+export const mcpFaqs: readonly Faq[] = [
+  {
+    question: "Does Quick Notes have an MCP server?",
+    answer:
+      "Yes. Quick Notes has an MCP server at /api/mcp. Signed-in users connect with personal access tokens and can let an assistant read, search, create, update, append to, delete and restore their cloud notes. OAuth sign-in is planned; clients that require OAuth are not supported yet.",
+  },
+  {
+    question: "How do I connect Claude to Quick Notes?",
+    answer:
+      "Sign in to Quick Notes, open the account menu and choose Connect AI. Create a personal access token, copy it when it is shown once, then add the Quick Notes MCP server URL and token to Claude Code or configure Claude Desktop with the mcp-remote bridge.",
+  },
+  {
+    question: "Can AI assistants read my guest notes?",
+    answer:
+      "No. Guest notes stay in browser storage and are not reachable through MCP. An assistant can access only cloud notes belonging to the account associated with its token.",
+  },
+  {
+    question: "Is it safe to give an assistant access?",
+    answer:
+      "Tokens are revocable and can be limited to read access or given read and write access. They reach only notes in the associated Quick Notes account. The full token is shown once and stored as a SHA-256 hash; an assistant with write access can create, change, delete and restore that account's notes.",
+  },
+  {
+    question: "Which clients work?",
+    answer:
+      "Claude Code and Cursor connect directly over MCP Streamable HTTP with a bearer token; Claude Desktop can connect through mcp-remote. Other clients that support MCP Streamable HTTP and bearer tokens can also connect. OAuth sign-in is planned; ChatGPT-style connectors and other clients that require OAuth are not supported yet.",
+  },
+];
+
+export const faqs: readonly Faq[] = [...generalFaqs, ...mcpFaqs];

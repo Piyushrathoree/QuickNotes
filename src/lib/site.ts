@@ -23,7 +23,7 @@ export const site = {
     "A free online notepad that opens instantly. Write with live Markdown, export to .md or .txt, and sync across devices with an optional account.",
   /** Longer plain-language summary for JSON-LD, the About page and llms.txt. */
   summary:
-    "Quick Notes is a free, open-source online notepad. Open the page and start typing — no sign-up needed. Notes save automatically in your browser, Markdown formats as you type (bullets, numbered lists, checklists, headings, horizontal rules and code blocks with syntax highlighting), and any note can be downloaded as a Markdown (.md) or plain text (.txt) file. Create a free account with an email and password, then press Save to keep your notes in the cloud and open them on any device.",
+    "Quick Notes is a free, open-source online notepad. Open the page and start typing — no sign-up needed. Notes save automatically in your browser, Markdown formats as you type (bullets, numbered lists, checklists, headings, horizontal rules and code blocks with syntax highlighting), and any note can be downloaded as a Markdown (.md) or plain text (.txt) file. Create a free account with an email and password, then press Save to keep your notes in the cloud and open them on any device. Signed-in users can connect MCP-compatible AI assistants to their cloud notes with personal access tokens; OAuth sign-in is planned.",
   tagline: "A free online notepad with live Markdown",
   keywords: [
     "online notepad",
@@ -54,6 +54,7 @@ export const site = {
     "Four writing fonts: Hand, Sans, Serif and Mono",
     "Light and dark themes",
     "Optional free account (email and password): press Save to keep notes in the cloud and open them on any device",
+    "Connect Claude, Cursor and other MCP-compatible AI assistants to your cloud notes with scoped, revocable personal access tokens",
     "Works on phones, tablets and desktops",
     "Free and open source (MIT license)",
   ],

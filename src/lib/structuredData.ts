@@ -56,6 +56,44 @@ export interface Faq {
   answer: string;
 }
 
+/** MCP docs page: article, breadcrumb and the visible FAQ. */
+export function mcpStructuredData(faqs: readonly Faq[], description: string) {
+  const pageUrl = absoluteUrl("/mcp");
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "TechArticle",
+        "@id": pageUrl + "#article",
+        url: pageUrl,
+        headline: "Connect an AI assistant to Quick Notes",
+        description,
+        inLanguage: site.language,
+        dateModified: site.updated,
+        author: { "@id": authorId },
+        publisher: { "@id": authorId },
+        isPartOf: { "@id": websiteId },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: site.name, item: absoluteUrl("/") },
+          { "@type": "ListItem", position: 2, name: "MCP server", item: pageUrl },
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": pageUrl + "#faq",
+        mainEntity: faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: { "@type": "Answer", text: faq.answer },
+        })),
+      },
+    ],
+  };
+}
+
 /** About page: breadcrumb, the page itself and the visible FAQ (must match the rendered text). */
 export function aboutStructuredData(faqs: readonly Faq[]) {
   const pageUrl = absoluteUrl("/about");

@@ -1,5 +1,5 @@
-import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, uuid } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { pgTable, text, timestamp, boolean, index, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -73,10 +73,26 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
-  accounts: many(account),
-}));
+export const apiTokens = pgTable(
+  "api_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    prefix: text("prefix").notNull(),
+    scopes: text("scopes").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: "date" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+  },
+  (table) => [index("api_tokens_user_id_created_at_idx").on(table.userId, table.createdAt)],
+);
 
 export const sessionRelations = relations(session, ({ one }) => ({
   user: one(user, {
@@ -88,6 +104,13 @@ export const sessionRelations = relations(session, ({ one }) => ({
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const apiTokensRelations = relations(apiTokens, ({ one }) => ({
+  user: one(user, {
+    fields: [apiTokens.userId],
     references: [user.id],
   }),
 }));
@@ -111,9 +134,52 @@ export const notes = pgTable(
   (table) => [index("notes_userId_updatedAt_idx").on(table.userId, table.updatedAt)],
 );
 
-export const notesRelations = relations(notes, ({ one }) => ({
+export const noteShares = pgTable(
+  "note_shares",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    noteId: uuid("note_id")
+      .notNull()
+      .references(() => notes.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+  },
+  (table) => [
+    index("note_shares_note_id_idx").on(table.noteId),
+    uniqueIndex("note_shares_active_note_unique")
+      .on(table.noteId)
+      .where(sql`${table.revokedAt} IS NULL`),
+  ],
+);
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessions: many(session),
+  accounts: many(account),
+  apiTokens: many(apiTokens),
+  noteShares: many(noteShares),
+}));
+
+export const notesRelations = relations(notes, ({ one, many }) => ({
   user: one(user, {
     fields: [notes.userId],
+    references: [user.id],
+  }),
+  noteShares: many(noteShares),
+}));
+
+export const noteSharesRelations = relations(noteShares, ({ one }) => ({
+  note: one(notes, {
+    fields: [noteShares.noteId],
+    references: [notes.id],
+  }),
+  user: one(user, {
+    fields: [noteShares.userId],
     references: [user.id],
   }),
 }));

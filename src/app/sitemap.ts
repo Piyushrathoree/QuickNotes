@@ -8,5 +8,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: absoluteUrl("/"), lastModified, changeFrequency: "weekly", priority: 1 },
     { url: absoluteUrl("/about"), lastModified, changeFrequency: "monthly", priority: 0.8 },
+    { url: absoluteUrl("/mcp"), lastModified, changeFrequency: "monthly", priority: 0.8 },
   ];
 }

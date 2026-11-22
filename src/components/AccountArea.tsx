@@ -4,7 +4,7 @@ import { useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { HelpCircleIcon, Logout01Icon, SquareLock02Icon, UnfoldMoreIcon, UserIcon } from "@hugeicons/core-free-icons";
+import { AiChat01Icon, HelpCircleIcon, Logout01Icon, SquareLock02Icon, UnfoldMoreIcon, UserIcon } from "@hugeicons/core-free-icons";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { WritingFontRow } from "@/components/FontPopover";
 import { Icon } from "@/components/Icon";
@@ -184,6 +184,10 @@ function AccountMenu({ user, side, align, children }: AccountMenuProps) {
             </Link>
             {user && (
               <>
+                <Link href="/connect" data-menu-item onClick={() => setMenuOpen(false)} className={menuRowClass}>
+                  <Icon icon={AiChat01Icon} className="text-muted-foreground" />
+                  Connect AI
+                </Link>
                 <button
                   type="button"
                   data-menu-item

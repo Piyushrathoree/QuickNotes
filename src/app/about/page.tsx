@@ -145,6 +145,19 @@ export default function AboutPage() {
           ))}
         </div>
 
+        <h2 className={h2}>Connect your AI assistant</h2>
+        <p className={p}>
+          Signed-in users can connect Claude, Cursor and other MCP clients to their cloud notes with a scoped personal access token. Read the{" "}
+          <Link href="/mcp" className="font-medium text-brand underline-offset-4 hover:underline">
+            MCP server setup guide
+          </Link>
+          , or{" "}
+          <Link href="/connect" className="font-medium text-brand underline-offset-4 hover:underline">
+            create a token
+          </Link>
+          . OAuth sign-in is planned; clients that require OAuth are not supported yet.
+        </p>
+
         <h2 className={h2}>Open source</h2>
         <p className={p}>
           Quick Notes is free and open source under the MIT license. The code is on{" "}

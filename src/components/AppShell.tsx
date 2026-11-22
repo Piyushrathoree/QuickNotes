@@ -9,6 +9,7 @@ import { LogoMark } from "@/components/brand/LogoMark";
 import { Icon } from "@/components/Icon";
 import { NotesSidebar } from "@/components/NotesSidebar";
 import { SaveButton } from "@/components/SaveButton";
+import { SharePopover, useShareController } from "@/components/share/SharePopover";
 import { ThemeButton } from "@/components/ThemeButton";
 import { iconButtonClass } from "@/components/styles";
 import { WritingPad, type WritingPadHandle } from "@/components/WritingPad";
@@ -30,6 +31,7 @@ function useHydrated(): boolean {
 
 export function AppShell() {
   const store = useNoteStore();
+  const shareController = useShareController(store);
   const { prefs, setPrefs } = usePrefs();
   const hydrated = useHydrated();
   const padRef = useRef<WritingPadHandle>(null);
@@ -202,6 +204,7 @@ export function AppShell() {
               <span className="truncate">Quick Notes</span>
             </span>
             <SaveButton store={store} compact />
+            <SharePopover store={store} controller={shareController} compact />
             <button type="button" onClick={newNote} aria-label="New note" className={cn(barButtonClass, "text-brand")}>
               <Icon icon={PencilEdit02Icon} />
             </button>
@@ -209,7 +212,7 @@ export function AppShell() {
         </header>
 
         <main className="shell-main">
-          <WritingPad store={store} handleRef={padRef} />
+          <WritingPad store={store} handleRef={padRef} shareController={shareController} />
         </main>
       </div>
 

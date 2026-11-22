@@ -53,6 +53,7 @@ export interface CloudEnvironment {
 export interface CloudSnapshot {
   notes: NoteSummary[];
   activeNote: Note | null;
+  activeNotePersisted?: boolean;
   saveState: SaveState;
   dirty: boolean;
   ready: boolean;
@@ -61,6 +62,7 @@ export interface CloudSnapshot {
 export const EMPTY_CLOUD_SNAPSHOT: CloudSnapshot = {
   notes: [],
   activeNote: null,
+  activeNotePersisted: false,
   saveState: "idle",
   dirty: false,
   ready: false,
@@ -349,6 +351,7 @@ export class CloudSession {
     return {
       notes,
       activeNote,
+      activeNotePersisted: active !== undefined && active.baseUpdatedAt !== null,
       saveState: this.deriveSaveState(active),
       dirty: active ? hasUnsavedEdits(active) : false,
       ready: this.serverSettled || notes.length > 0,

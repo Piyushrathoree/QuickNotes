@@ -42,6 +42,65 @@ Sign-in is **email + password** (Better Auth). There is no email-verification st
 
 Set these values in Vercel under **Project → Settings → Environment Variables** for Production.
 
+## MCP server
+
+Quick Notes exposes a stateless MCP Streamable HTTP endpoint at /api/mcp. Sign in, open the account menu, choose **Connect AI**, then create a read-only or read-and-write personal access token at /connect. The full token is shown once; copy it into your client configuration. Use the endpoint URL shown on /mcp or /connect.
+
+### Claude Code
+
+~~~sh
+claude mcp add --transport http quick-notes {URL} --header "Authorization: Bearer YOUR_TOKEN"
+~~~
+
+### Cursor
+
+Add this entry to ~/.cursor/mcp.json:
+
+~~~json
+{
+  "mcpServers": {
+    "quick-notes": {
+      "url": "{URL}",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  }
+}
+~~~
+
+### Claude Desktop
+
+Configure Claude Desktop through the mcp-remote bridge in claude_desktop_config.json:
+
+~~~json
+{
+  "mcpServers": {
+    "quick-notes": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "{URL}", "--header", "Authorization: Bearer ${QN_TOKEN}"],
+      "env": {
+        "QN_TOKEN": "YOUR_TOKEN"
+      }
+    }
+  }
+}
+~~~
+
+### Any MCP client or curl
+
+Clients that support MCP Streamable HTTP can send a JSON-RPC tools/list request with a bearer token:
+
+~~~sh
+curl --request POST "{URL}" \
+  --header "Authorization: Bearer YOUR_TOKEN" \
+  --header "Content-Type: application/json" \
+  --header "Accept: application/json, text/event-stream" \
+  --data '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+~~~
+
+Client configuration syntax can change between versions; check your client's current MCP documentation. OAuth sign-in is planned. Clients that require OAuth are not supported yet.
+
 ### SEO and answer engines
 
 `NEXT_PUBLIC_SITE_URL` also controls the canonical URLs used by the app. The app then serves:
