@@ -24,6 +24,7 @@ export interface UiPrefs {
   sidebarOpen: boolean;
   theme: "light" | "dark";
   font: "hand" | "sans" | "serif" | "mono";
+  size: "small" | "medium" | "large" | "xlarge";
 }
 
 export interface NoteStore {
@@ -48,4 +49,3 @@ export interface NoteStore {
 export function deriveTitle(content: string): string {
   return content.split(/\r?\n/, 1)[0]?.trim() || "Untitled note";
 }
-  size: "small" | "medium" | "large" | "xlarge";
