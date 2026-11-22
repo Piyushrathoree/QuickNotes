@@ -31,6 +31,11 @@ const generalFaqs: readonly Faq[] = [
       "Yes, live. Typing Markdown formats it in place: bullets and numbered lists, checklists, headings, horizontal rules, quotes, bold, italic, strikethrough, links, inline code and fenced code blocks with syntax highlighting. Notes are saved as plain Markdown text.",
   },
   {
+    question: "Can I paste from other apps?",
+    answer:
+      "Yes. Paste formatted text from web pages, documents and spreadsheets into the note body to convert it to Markdown. Text copied from Excalidraw becomes a bullet list. Pasting images is not supported yet. Use Ctrl+Shift+V (or Cmd+Shift+V on Mac) to paste text without conversion.",
+  },
+  {
     question: "How do I make a bullet list in Quick Notes?",
     answer:
       "Type a dash and a space (- ) at the start of a line. Press Enter to start the next bullet, press Enter on an empty bullet to end the list, and use Tab or Shift+Tab to indent or outdent.",

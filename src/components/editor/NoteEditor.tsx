@@ -8,6 +8,7 @@ import { editorKeymap, fenceExitOnBacktick, type EditorBridge } from "./commands
 import { editorInteractions } from "./interactions";
 import { livePreview } from "./livePreview";
 import { markdownSupport } from "./markdown";
+import { smartPaste } from "./smartPaste";
 import { codeHighlight, editorBaseTheme } from "./theme";
 import "./editor.css";
 
@@ -62,6 +63,7 @@ function createState(doc: string, wiring: Wiring, readOnly: boolean, placeholder
       editorBaseTheme,
       editorKeymap(wiring.bridge),
       fenceExitOnBacktick,
+      smartPaste(),
       editorInteractions,
       wiring.compartments.readOnly.of(readOnlyExtension(readOnly)),
       wiring.compartments.placeholder.of(placeholderFor(placeholder)),

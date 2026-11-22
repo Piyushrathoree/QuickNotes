@@ -39,6 +39,7 @@ export const site = {
     "Opens straight into a blank note — no sign-up required",
     "Notes autosave in the browser as you type",
     "Live Markdown: bullets, numbered lists, checklists, headings, horizontal rules, quotes, links and inline styles",
+    "Paste from anywhere: web pages, docs, spreadsheets and Excalidraw text become clean Markdown",
     "Fenced code blocks with syntax highlighting and a copy button",
     "Save any note as a Markdown (.md) or plain text (.txt) file",
     "Four writing fonts: Hand, Sans, Serif and Mono",
