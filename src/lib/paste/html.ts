@@ -1,5 +1,6 @@
 import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
+import { convertPlainText } from "./plain";
 import type { HtmlParser } from "./types";
 
 export interface HtmlConversion {
@@ -23,10 +24,22 @@ export function convertHtml(html: string, plainText: string, parseHtml: HtmlPars
   const document = parseHtml(html);
   const body = document.body;
   const isMonospaceEditor = hasMonospaceEditorWrapper(body);
+  // Word marks its lists with mso-list styles, which sanitizeStyle drops, so read them first.
+  markWordListParagraphs(body);
+  // Text a page shows with its line breaks kept (white-space: pre-wrap) is cleaned as plain text, not as HTML.
+  const preformatted = extractPreformattedText(body, document);
   sanitizeChildren(body, document);
+  removePageChrome(body);
+  convertWordLists(body, document);
+  nestStrayLists(body);
+  flattenBlocksIn(body, document, "li");
+  flattenBlocksIn(body, document, "td, th");
   makeFirstTableRowsHeaders(body, document);
 
   const hasText = hasUsableText(body);
+  // Only text in plain divs and spans (a page showing a text file, a notes app): the clipboard text is the better
+  // source, because HTML collapses its line breaks.
+  if (!isMonospaceEditor && !hasMarkdownStructure(body)) return null;
   if (isMonospaceEditor && plainText.includes("\n")) {
     const code = plainText.replace(/\r\n?/g, "\n").replace(/\n+$/, "");
     return { markdown: `\`\`\`\n${code}\n\`\`\``, hasText };
@@ -83,7 +96,11 @@ export function convertHtml(html: string, plainText: string, parseHtml: HtmlPars
     },
   });
 
-  const markdown = normalizeMarkdown(service.turndown(body));
+  let markdown = normalizeMarkdown(service.turndown(body));
+  preformatted.forEach((text, index) => {
+    const cleaned = convertPlainText(text, "") ?? text.replace(/\r\n?/g, "\n").replace(/[ \t]+$/gm, "");
+    markdown = markdown.replace(`PASTEPLAIN${index}END`, () => cleaned.trim());
+  });
   if (!markdown) return null;
 
   if (plainText.trim() && comparableText(markdown) === comparableText(plainText)) return null;
@@ -191,6 +208,14 @@ function isUnsafeUrl(value: string): boolean {
   return /^(?:javascript|vbscript|data):/.test(normalized);
 }
 
+const STRUCTURE_SELECTOR =
+  "h1,h2,h3,h4,h5,h6,ul,ol,li,table,pre,blockquote,a[href],img,b,strong,i,em,u,s,del,strike,code,hr,sup,sub,p,br";
+
+function hasMarkdownStructure(body: HTMLElement): boolean {
+  if (body.querySelector(STRUCTURE_SELECTOR)) return true;
+  return Array.from(body.querySelectorAll("span, div")).some((node) => spanMarkdownMarkers(node as HTMLElement).prefix.length > 0);
+}
+
 function hasMonospaceEditorWrapper(body: HTMLElement): boolean {
   if (body.querySelector(".vscode-editor-data")) return true;
   if (hasMonospaceFont(body.getAttribute("style") ?? "")) return true;
@@ -225,12 +250,144 @@ function makeFirstTableRowsHeaders(body: HTMLElement, document: Document): void 
   }
 }
 
+const BULLET_GLYPHS = "•·▪◦●○►‣⁃";
+const CHROME_WORDS = new Set([
+  "cookie", "cookies", "consent", "gdpr", "advert", "adverts", "advertisement", "ad", "ads", "sponsor", "sponsored",
+  "share", "sharing", "subscribe", "newsletter", "popup",
+]);
+
+function isBlankElement(node: Node): boolean {
+  return node.nodeType === 3
+    ? !(node.nodeValue ?? "").replace(/[\s\u00a0]/g, "")
+    : node.nodeType === 1 && (node as Element).tagName === "P" && !(node.textContent ?? "").replace(/[\s\u00a0]/g, "");
+}
+
+/** Tags Word list paragraphs (mso-list) with their level and kind, and drops the typed "·" / "1." marker. */
+function markWordListParagraphs(body: HTMLElement): void {
+  for (const paragraph of Array.from(body.querySelectorAll("p"))) {
+    const style = paragraph.getAttribute("style") ?? "";
+    const isList = (/mso-list\s*:\s*(?!none)/i.test(style)) || /\bMsoListParagraph/i.test(paragraph.getAttribute("class") ?? "");
+    if (!isList) continue;
+    const level = Number(/level(\d+)/i.exec(style)?.[1] ?? "1") || 1;
+    const marker = Array.from(paragraph.childNodes).find((node) => node.nodeType === 1 && (node.textContent ?? "").trim() !== "");
+    const markerText = (marker?.textContent ?? "").replace(/[\s\u00a0]+/g, " ").trim();
+    let ordered = false;
+    if (marker && markerText.length <= 6 && !(marker as Element).querySelector("b, i, a, strong, em")) {
+      ordered = /^(?:\d+|[a-zA-Z])[.)]$/.test(markerText);
+      marker.parentNode?.removeChild(marker);
+    }
+    paragraph.setAttribute("data-mso-level", String(level));
+    if (ordered) paragraph.setAttribute("data-mso-ordered", "1");
+  }
+}
+
+/** Swaps each pre-wrap element for a placeholder paragraph and returns its text, in order. */
+function extractPreformattedText(body: HTMLElement, document: Document): string[] {
+  const texts: string[] = [];
+  for (const element of Array.from(body.querySelectorAll("[style]"))) {
+    if (!element.parentNode || element.tagName === "PRE" || element.closest("pre")) continue;
+    if (!/white-space\s*:\s*(?:pre|pre-wrap|pre-line|break-spaces)\b/i.test(element.getAttribute("style") ?? "")) continue;
+    if (element.closest("table, li")) continue;
+    const copy = element.cloneNode(true) as HTMLElement;
+    for (const br of Array.from(copy.querySelectorAll("br"))) br.replaceWith(document.createTextNode("\n"));
+    const text = copy.textContent ?? "";
+    if (!text.includes("\n")) continue;
+    const placeholder = document.createElement("p");
+    placeholder.textContent = `PASTEPLAIN${texts.length}END`;
+    element.parentNode.replaceChild(placeholder, element);
+    texts.push(text);
+  }
+  return texts;
+}
+
+function nextMeaningfulSibling(node: Node): Node | null {
+  let next = node.nextSibling;
+  while (next && isBlankElement(next)) next = next.nextSibling;
+  return next;
+}
+
+/** Turns runs of tagged Word paragraphs into real nested <ul>/<ol> lists. */
+function convertWordLists(body: HTMLElement, document: Document): void {
+  const paragraphs = Array.from(body.querySelectorAll("p[data-mso-level]"));
+  let index = 0;
+  while (index < paragraphs.length) {
+    const group = [paragraphs[index]];
+    while (index + 1 < paragraphs.length && nextMeaningfulSibling(group[group.length - 1]) === paragraphs[index + 1]) {
+      group.push(paragraphs[index + 1]);
+      index += 1;
+    }
+    index += 1;
+
+    const first = group[0];
+    const root = document.createElement(first.hasAttribute("data-mso-ordered") ? "ol" : "ul");
+    first.parentNode?.insertBefore(root, first);
+    const stack: Array<{ level: number; list: Element; last: Element | null }> = [{ level: 1, list: root, last: null }];
+
+    for (const paragraph of group) {
+      const level = Math.max(1, Number(paragraph.getAttribute("data-mso-level")) || 1);
+      while (stack.length > 1 && stack[stack.length - 1].level > level) stack.pop();
+      let top = stack[stack.length - 1];
+      if (top.level < level) {
+        const host = top.last ?? top.list.appendChild(document.createElement("li"));
+        const list = document.createElement(paragraph.hasAttribute("data-mso-ordered") ? "ol" : "ul");
+        host.appendChild(list);
+        top = { level, list, last: null };
+        stack.push(top);
+      }
+      const item = document.createElement("li");
+      while (paragraph.firstChild) item.appendChild(paragraph.firstChild);
+      top.list.appendChild(item);
+      top.last = item;
+      paragraph.parentNode?.removeChild(paragraph);
+    }
+  }
+}
+
+/** Google Docs puts a nested <ul> straight inside its parent <ul>. Move it into the previous <li>. */
+function nestStrayLists(body: HTMLElement): void {
+  for (const list of Array.from(body.querySelectorAll("ul > ul, ul > ol, ol > ul, ol > ol"))) {
+    const previous = list.previousElementSibling;
+    if (previous && previous.tagName === "LI") previous.appendChild(list);
+  }
+}
+
+/** Removes navigation, ads, cookie banners and share bars that ride along when a whole page is copied. */
+function removePageChrome(body: HTMLElement): void {
+  for (const element of Array.from(body.querySelectorAll("nav, aside, [class], [id]"))) {
+    if (!element.parentNode || element === body) continue;
+    if (element.tagName === "NAV" || element.tagName === "ASIDE") {
+      element.parentNode.removeChild(element);
+      continue;
+    }
+    const words = `${element.getAttribute("class") ?? ""} ${element.getAttribute("id") ?? ""}`.toLowerCase().split(/[^a-z0-9]+/);
+    if (words.some((word) => CHROME_WORDS.has(word))) element.parentNode.removeChild(element);
+  }
+}
+
+/** Inside list items and table cells, paragraphs become inline text so the Markdown stays tight. */
+function flattenBlocksIn(body: HTMLElement, document: Document, selector: string): void {
+  for (const container of Array.from(body.querySelectorAll(selector))) {
+    const blocks = Array.from(container.children).filter((child) => child.tagName === "P" || child.tagName === "DIV");
+    blocks.forEach((block, position) => {
+      if (position > 0) block.parentNode?.insertBefore(document.createTextNode(" "), block);
+      unwrap(block);
+    });
+  }
+}
+
 function normalizeMarkdown(value: string): string {
   return value
     .replace(/\r\n?/g, "\n")
     .replace(/\u00a0/g, " ")
     .split("\n")
-    .map((line) => line.replace(/[ \t]+$/g, ""))
+    .map((line) =>
+      line
+        .replace(/[ \t]+$/g, "")
+        .replace(/^(\s*- \[[ x]\])\s{2,}/, "$1 ")
+        // Pasted paragraphs that start with "1." or a bullet glyph are list items that lost their list.
+        .replace(/^(\s*)(\d{1,3})\\\.(\s)/, "$1$2.$3")
+        .replace(new RegExp(`^(\\s*)[${BULLET_GLYPHS}]\\s+`), "$1- "),
+    )
     .join("\n")
     .replace(/\n{4,}/g, "\n\n\n")
     .trim();

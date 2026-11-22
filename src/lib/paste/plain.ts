@@ -104,7 +104,7 @@ function replaceIndentTabs(text: string): string {
 function convertListLine(line: string): string {
   const indentation = line.match(/^[ \t]*/)?.[0] ?? "";
   const content = line.slice(indentation.length);
-  const marker = /^(?:(\d+[.)]|\(\d+\)|[A-Za-z]\))|([•◦▪●○·–—*]))\s+(.*)$/u.exec(content);
+  const marker = /^(?:(\d+[.)]|\(\d+\)|[A-Za-z]\))|([•◦▪●○·►‣⁃–—*]))\s+(.*)$/u.exec(content);
   const taskSource = marker ? marker[3] : content;
   const task = /^(☐|☑|✓|\[\s\]|\[[xX]\])\s*(.*)$/u.exec(taskSource);
 

@@ -31,8 +31,10 @@ export function convertClipboardWithParser(input: ClipboardInput, parseHtml: Htm
       if (hasImageFiles && !plainHasText && !converted?.hasText) {
         return { kind: "blocked", reason: "image", message: IMAGE_MESSAGE };
       }
-      if (!converted) return { kind: "default" };
-      return markdownResult("html", converted.markdown);
+      // The HTML adds nothing over the text (copied from a plain-text page, say): clean the text instead.
+      if (converted) return markdownResult("html", converted.markdown);
+      const cleaned = convertPlainText(text, input.selectionText ?? "");
+      return cleaned === null ? { kind: "default" } : markdownResult("plain", cleaned);
     }
 
     if (hasImageFiles && !plainHasText) {
