@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Serif, Patrick_Hand } from "next/font/google";
 import type { ReactNode } from "react";
 import { AppToaster } from "@/components/AppToaster";
+import { WebAnalytics } from "@/components/WebAnalytics";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -132,6 +133,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
       <body>
         {children}
         <AppToaster />
+        <WebAnalytics />
       </body>
     </html>
   );
