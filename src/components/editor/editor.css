@@ -134,10 +134,15 @@
   color: var(--text-secondary);
 }
 
-/* ---- Horizontal rule: a centred hairline, a little stronger than the ruled lines ---- */
+/* ---- Horizontal rule: a centred hairline, clearly stronger than the ruled lines ---- */
+
+.note-editor {
+  --line-strong: light-dark(rgb(31 30 29 / 0.3), rgb(255 255 255 / 0.28));
+  --line-stronger: light-dark(rgb(31 30 29 / 0.5), rgb(255 255 255 / 0.45));
+}
 
 .note-editor .cm-line.md-hr {
-  background-image: linear-gradient(var(--border), var(--border));
+  background-image: linear-gradient(var(--line-strong), var(--line-strong));
   background-position: center;
   background-size: 100% 1px;
   background-repeat: no-repeat;
@@ -319,7 +324,7 @@
   height: 28px;
   min-width: 3rem;
   padding: 0 0.5rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line-strong);
   background: var(--pad);
   line-height: 27px;
   vertical-align: middle;
@@ -328,7 +333,7 @@
 
 .note-editor .md-table th {
   font-weight: 700;
-  box-shadow: inset 0 -1px 0 var(--border);
+  box-shadow: inset 0 -1px 0 var(--line-stronger);
 }
 
 .note-editor .md-table code.md-code-inline {
