@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { AuthCard, authLinkClass } from "@/components/auth/AuthCard";
 import { AutoHeight } from "@/components/auth/AutoHeight";
-import { GuestOption } from "@/components/auth/GuestOption";
 import { ModeSwitch, type AuthMode } from "@/components/auth/ModeSwitch";
 import { NoticeBanner, ErrorBanner } from "@/components/auth/Notices";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -142,13 +141,13 @@ export function LoginForm({ notice, initialMode }: { notice?: string; initialMod
 
   const copy = isSignUp
     ? {
-        title: "Your notes, wherever you write",
+        title: "Create your account",
         description:
-          "Create a free account to keep your notes safe and open them on any device. Notes already in this browser come with you.",
+          "Save notes to your account and open them on any device. Your browser notes come with you.",
       }
     : {
         title: "Welcome back",
-        description: "Sign in to pick up where you left off. Your notes sync across all your devices.",
+        description: "Sign in to pick up where you left off.",
       };
 
   return (
@@ -215,7 +214,7 @@ export function LoginForm({ notice, initialMode }: { notice?: string; initialMod
                 onBlur={() => blurCheck("password")}
                 autoComplete={isSignUp ? "new-password" : "current-password"}
                 enterKeyHint="go"
-                placeholder={isSignUp ? "At least 8 characters" : "Enter your password"}
+                placeholder={isSignUp ? "Create a password" : "Enter your password"}
                 hint={isSignUp ? `At least ${MIN_PASSWORD_LENGTH} characters.` : undefined}
                 error={errors.password}
                 labelAside={
@@ -233,8 +232,6 @@ export function LoginForm({ notice, initialMode }: { notice?: string; initialMod
               {isSignUp ? "Create account" : "Sign in"}
             </SubmitButton>
           </form>
-
-          <GuestOption />
         </AutoHeight>
       </div>
     </AuthCard>

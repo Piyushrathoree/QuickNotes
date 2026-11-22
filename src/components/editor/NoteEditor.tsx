@@ -2,7 +2,7 @@
 
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { Annotation, Compartment, EditorState, Transaction, type Extension } from "@codemirror/state";
-import { EditorView, keymap, placeholder as placeholderExtension } from "@codemirror/view";
+import { drawSelection, EditorView, keymap, placeholder as placeholderExtension } from "@codemirror/view";
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { editorKeymap, fenceExitOnBacktick, type EditorBridge } from "./commands";
 import { editorInteractions } from "./interactions";
@@ -54,6 +54,7 @@ function createState(doc: string, wiring: Wiring, readOnly: boolean, placeholder
     doc,
     extensions: [
       history(),
+      drawSelection({ drawRangeCursor: false }),
       EditorView.lineWrapping,
       markdownSupport,
       livePreview,

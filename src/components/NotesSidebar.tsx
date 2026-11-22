@@ -6,6 +6,7 @@ import { AccountArea } from "@/components/AccountArea";
 import { LogoMark } from "@/components/brand/LogoMark";
 import { Icon } from "@/components/Icon";
 import { NoteList } from "@/components/NoteList";
+import { ThemeButton } from "@/components/ThemeButton";
 import { iconButtonClass } from "@/components/styles";
 import { cn } from "@/lib/utils";
 import type { NoteSummary } from "@/lib/types";
@@ -56,8 +57,7 @@ export const NotesSidebar = memo(function NotesSidebar({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Desktop only. Expanded: wordmark on the left, collapse toggle on the right. Collapsed: the expand toggle
-          alone in the icon column. The mobile drawer draws its own header. */}
+      {/* Desktop only. The mobile drawer draws its own header. */}
       {collapsible && (
         <div className="sb-inset flex h-12 shrink-0 items-center gap-1">
           <button
@@ -79,6 +79,7 @@ export const NotesSidebar = memo(function NotesSidebar({
               Quick Notes
             </span>
           </span>
+          <ThemeButton className="sb-fade" />
           <button
             type="button"
             onClick={onToggle}
@@ -90,6 +91,12 @@ export const NotesSidebar = memo(function NotesSidebar({
           >
             <Icon icon={SidebarLeftIcon} />
           </button>
+        </div>
+      )}
+
+      {collapsible && (
+        <div className="sb-rail-only sb-inset shrink-0">
+          <ThemeButton className="size-10" />
         </div>
       )}
 

@@ -4,7 +4,7 @@ import { tags as t } from "@lezer/highlight";
 
 /**
  * Base theme for CodeMirror's own elements. Colours come from the app's tokens, so light and dark follow the same
- * values the rest of the app uses. The caret is the accent colour. Selection uses the ::selection token in globals.
+ * values the rest of the app uses.
  */
 export const editorBaseTheme = EditorView.theme({
   "&": {
@@ -23,8 +23,15 @@ export const editorBaseTheme = EditorView.theme({
   ".cm-content": {
     padding: "0",
     fontFamily: "inherit",
-    caretColor: "var(--accent)",
     minHeight: "0",
+  },
+  ".cm-cursor": {
+    borderLeftColor: "var(--accent)",
+    // Shorten the caret within each row without changing the ruled grid.
+    transform: "scaleY(0.72)",
+  },
+  "& > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+    backgroundColor: "var(--selection)",
   },
   ".cm-line": {
     padding: "0",

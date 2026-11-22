@@ -271,6 +271,6 @@
 
 .note-editor .cm-placeholder {
   position: relative;
-  top: 3px;
+  top: 11px;
   color: var(--text-muted);
 }

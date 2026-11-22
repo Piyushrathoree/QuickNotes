@@ -10,7 +10,7 @@ const OPTIONS: { value: AuthMode; label: string }[] = [
   { value: "signup", label: "Create account" },
 ];
 
-/** Two-option segmented control with radio semantics. Arrow keys, Home and End move and select. */
+/** Two account modes with radio semantics. Arrow keys, Home and End move and select. */
 export function ModeSwitch({ value, onChange }: { value: AuthMode; onChange: (mode: AuthMode) => void }) {
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const activeIndex = OPTIONS.findIndex((option) => option.value === value);
@@ -29,12 +29,7 @@ export function ModeSwitch({ value, onChange }: { value: AuthMode; onChange: (mo
   }
 
   return (
-    <div role="radiogroup" aria-label="Account type" className="relative grid grid-cols-2 rounded-[14px] bg-hover p-1">
-      <span
-        aria-hidden="true"
-        className="auth-thumb pointer-events-none absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-[10px] border border-border bg-background shadow-xs"
-        style={{ transform: `translateX(${activeIndex * 100}%)` }}
-      />
+    <div role="radiogroup" aria-label="Account type" className="grid grid-cols-2 border-b border-border">
       {OPTIONS.map((option, index) => {
         const checked = option.value === value;
         return (
@@ -50,8 +45,8 @@ export function ModeSwitch({ value, onChange }: { value: AuthMode; onChange: (mo
             onClick={() => onChange(option.value)}
             onKeyDown={onKeyDown}
             className={cn(
-              "relative z-10 h-11 rounded-[10px] text-sm font-medium outline-none transition-colors duration-200 focus-visible:ring-[3px] focus-visible:ring-ring/35",
-              checked ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              "-mb-px h-11 border-b-2 text-sm font-medium outline-none transition-colors duration-150 focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+              checked ? "border-foreground text-foreground" : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >
             {option.label}

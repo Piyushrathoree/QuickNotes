@@ -4,7 +4,16 @@ import { useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { AiChat01Icon, HelpCircleIcon, Logout01Icon, SquareLock02Icon, UnfoldMoreIcon, UserIcon } from "@hugeicons/core-free-icons";
+import {
+  AiChat01Icon,
+  HelpCircleIcon,
+  Login03Icon,
+  Logout01Icon,
+  SquareLock02Icon,
+  UnfoldMoreIcon,
+  UserAdd01Icon,
+  UserIcon,
+} from "@hugeicons/core-free-icons";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { WritingFontRow } from "@/components/FontPopover";
 import { Icon } from "@/components/Icon";
@@ -152,23 +161,26 @@ function AccountMenu({ user, side, align, children }: AccountMenuProps) {
             </div>
 
             {!user && (
-              <>
-                <div className="px-1 pb-1">
-                  <Button asChild data-menu-item className="h-10 w-full rounded-[10px] text-sm">
-                    <Link href="/login" onClick={() => setMenuOpen(false)}>
-                      Sign in
-                    </Link>
-                  </Button>
-                </div>
+              <div className="grid gap-0.5">
+                <Link
+                  href="/login"
+                  data-menu-item
+                  onClick={() => setMenuOpen(false)}
+                  className={cn(menuRowClass, "font-medium text-foreground")}
+                >
+                  <Icon icon={Login03Icon} className="text-muted-foreground" />
+                  Sign in
+                </Link>
                 <Link
                   href="/login?mode=signup"
                   data-menu-item
                   onClick={() => setMenuOpen(false)}
-                  className={cn(menuRowClass, "justify-center text-muted-foreground")}
+                  className={menuRowClass}
                 >
+                  <Icon icon={UserAdd01Icon} className="text-muted-foreground" />
                   Create account
                 </Link>
-              </>
+              </div>
             )}
 
             <div role="separator" className="mx-2 my-1.5 h-px bg-border" />

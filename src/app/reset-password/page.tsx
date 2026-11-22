@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { AuthCard, authLinkClass } from "@/components/auth/AuthCard";
+import { AuthCard, authActionClass, authLinkClass } from "@/components/auth/AuthCard";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Icon } from "@/components/Icon";
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
@@ -37,7 +37,7 @@ function InvalidLink() {
         </div>
         <Link
           href="/forgot-password"
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] bg-primary text-base font-medium text-primary-foreground outline-none transition-colors duration-150 hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring/35"
+          className={authActionClass}
         >
           Request a new link
           <Icon icon={ArrowRight01Icon} />

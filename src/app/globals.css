@@ -247,18 +247,16 @@ html[data-sidebar="collapsed"] .sb-aside .sb-rail-only {
   }
 }
 
-/* Theme change: the big surfaces (sidebar, pad, phone bar, drawer) fade their background and border for 180ms. Only
-   those few roots transition. Colour is never transitioned here: text inherits it, so a colour transition on a
-   container restyles every descendant (the sidebar's icon paths, the editor's lines) on every frame. Text colours
-   switch at once, as they did before the fade. The class is added on a user change only, never on first paint. */
-html.theme-animating .sb-aside,
-html.theme-animating .sb-aside *,
-html.theme-animating .shell-main > *,
-html.theme-animating .shell-phone-only,
-html.theme-animating [data-slot="sheet-content"] {
-  transition:
-    background-color 180ms ease-out,
-    border-color 180ms ease-out;
+/* Fade the whole view so the text, ruled paper and menus change together. */
+html.theme-crossfade::view-transition {
+  pointer-events: none;
+}
+
+html.theme-crossfade::view-transition-group(root),
+html.theme-crossfade::view-transition-old(root),
+html.theme-crossfade::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: ease-in-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -322,9 +320,9 @@ html.theme-animating [data-slot="sheet-content"] {
   }
 }
 
-/* The shell is one screen: it follows the visible height (keyboard included) and never scrolls the document. */
-html:has(.shell-root),
-html:has(.shell-root) body {
+/* AppShell applies this only while the editor route is visible. */
+html.editor-scroll-lock,
+html.editor-scroll-lock body {
   overflow: hidden;
   overscroll-behavior: none;
 }
@@ -370,17 +368,6 @@ summary,
   font-family: var(--font-plex-serif), Georgia, serif;
 }
 
-/* Faint notepad rules behind the auth column, fading out toward the bottom. */
-.auth-ruled {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0 27px,
-    var(--rule) 27px 28px
-  );
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 72%);
-  mask-image: linear-gradient(to bottom, #000 0%, transparent 72%);
-}
-
 .auth-enter {
   animation: auth-enter 250ms var(--ease-soft) both;
 }
@@ -403,17 +390,11 @@ summary,
   transition: height 250ms var(--ease-soft);
 }
 
-/* Segmented switch thumb. */
-.auth-thumb {
-  transition: transform 250ms var(--ease-soft);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .auth-enter {
     animation: none;
   }
-  .auth-height,
-  .auth-thumb {
+  .auth-height {
     transition: none;
   }
 }

@@ -120,6 +120,13 @@ export function AppShell() {
     }
   }, [hydrated, sidebarOpen]);
 
+  // Next.js can keep the editor DOM hidden after navigation. Release the lock when its layout effects are disconnected.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("editor-scroll-lock");
+    return () => root.classList.remove("editor-scroll-lock");
+  }, []);
+
   // Another tab changed the appearance. Read storage directly so this never runs against the server snapshot.
   useEffect(() => {
     const onStorage = () => {
@@ -199,6 +206,7 @@ export function AppShell() {
             <button type="button" onClick={() => setSheetOpen(true)} aria-label="Open notes" className={barButtonClass}>
               <Icon icon={Menu01Icon} />
             </button>
+            <ThemeButton className={barButtonClass} />
             <span className="flex min-w-0 flex-1 items-center gap-2 pl-0.5 text-[15px] font-semibold tracking-[-0.01em] text-foreground select-none">
               <LogoMark size={24} tile="var(--logo-tile)" className="shrink-0" />
               <span className="truncate">Quick Notes</span>
@@ -232,13 +240,12 @@ export function AppShell() {
           <SheetHeader className="sr-only">
             <SheetDescription>Your notes. Pick one to open it.</SheetDescription>
           </SheetHeader>
-          {/* The drawer's one wordmark and its one theme toggle. The notes header below only keeps the About link. */}
+          {/* The theme toggle is also available while the drawer is open. */}
           <div className="flex h-12 shrink-0 items-center gap-1 pr-2.5 pl-4">
             <SheetTitle className="flex min-w-0 flex-1 items-center gap-2 text-[15px] font-semibold tracking-[-0.01em] select-none">
               <LogoMark size={24} tile="var(--logo-tile)" className="shrink-0" />
               <span className="truncate">Quick Notes</span>
             </SheetTitle>
-            
             <ThemeButton />
           </div>
           <NotesSidebar

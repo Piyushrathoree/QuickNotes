@@ -1,40 +1,58 @@
 "use client";
 
 import { Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons";
+import { flushSync } from "react-dom";
 import { applyTheme } from "@/components/appearance";
 import { Icon } from "@/components/Icon";
 import { iconButtonClass } from "@/components/styles";
 import { usePrefs } from "@/lib/store/prefs";
 import { cn } from "@/lib/utils";
 
-let themeTimer: number | undefined;
+let activeThemeTransition: ViewTransition | undefined;
 
-/**
- * Lets the surfaces fade to the new colours for 200ms. The class is added only on a user change, never on first paint,
- * and it covers colours only (see html.theme-animating in globals.css).
- */
-function applyThemeWithFade(theme: "light" | "dark") {
+function applyThemeWithFade(theme: "light" | "dark", updatePrefs: ReturnType<typeof usePrefs>["updatePrefs"]) {
   const root = document.documentElement;
-  root.classList.add("theme-animating");
-  window.clearTimeout(themeTimer);
-  themeTimer = window.setTimeout(() => root.classList.remove("theme-animating"), 200);
-  applyTheme(theme);
+  const commitTheme = () => {
+    updatePrefs({ theme });
+    applyTheme(theme);
+  };
+
+  if (!document.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    activeThemeTransition?.skipTransition();
+    activeThemeTransition = undefined;
+    root.classList.remove("theme-crossfade");
+    commitTheme();
+    return;
+  }
+
+  root.classList.add("theme-crossfade");
+  const transition = document.startViewTransition(() => {
+    // A newer request can replace this transition before its update runs.
+    if (activeThemeTransition === transition) flushSync(commitTheme);
+  });
+  activeThemeTransition = transition;
+
+  const clearTransition = () => {
+    if (activeThemeTransition !== transition) return;
+    activeThemeTransition = undefined;
+    root.classList.remove("theme-crossfade");
+  };
+  void transition.finished.then(clearTransition, clearTransition);
 }
 
-/** Light ⇄ dark toggle icon button. Used by the mobile drawer header. The icon shows the mode in effect. */
-export function ThemeButton() {
+/** Light ⇄ dark toggle. The icon shows the current mode, and the label names the action. */
+export function ThemeButton({ className }: { className?: string }) {
   const { prefs, updatePrefs } = usePrefs();
   const isDark = prefs.theme === "dark";
   const next = isDark ? "light" : "dark";
   const label = `Switch to ${next} theme`;
 
   function toggle() {
-    updatePrefs({ theme: next });
-    applyThemeWithFade(next);
+    applyThemeWithFade(next, updatePrefs);
   }
 
   return (
-    <button type="button" onClick={toggle} aria-label={label} title={label} className={iconButtonClass}>
+    <button type="button" onClick={toggle} aria-label={label} title={label} className={cn(iconButtonClass, className)}>
       <Icon icon={isDark ? Moon02Icon : Sun03Icon} />
     </button>
   );
@@ -50,8 +68,7 @@ export function ThemeRow() {
 
   function toggle() {
     const next = isDark ? "light" : "dark";
-    updatePrefs({ theme: next });
-    applyThemeWithFade(next);
+    applyThemeWithFade(next, updatePrefs);
   }
 
   return (

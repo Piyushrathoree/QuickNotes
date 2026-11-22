@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
+import { authActionClass } from "@/components/auth/AuthCard";
 
 /** Full-width 48px primary action with an in-button spinner while a request is in flight. */
 export function SubmitButton({
@@ -18,12 +18,12 @@ export function SubmitButton({
   onClick?: () => void;
 }) {
   return (
-    <Button
+    <button
       type="submit"
       disabled={busy || disabled}
       aria-busy={busy || undefined}
       onClick={onClick}
-      className="h-12 w-full rounded-[12px] text-base font-medium disabled:opacity-80"
+      className={`${authActionClass} disabled:opacity-60`}
     >
       {busy && (
         <span
@@ -32,6 +32,6 @@ export function SubmitButton({
         />
       )}
       {busy ? busyLabel : children}
-    </Button>
+    </button>
   );
 }
