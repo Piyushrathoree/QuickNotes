@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExter
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
 import { Menu01Icon, PencilEdit02Icon } from "@hugeicons/core-free-icons";
-import { applyFont, applyTheme } from "@/components/appearance";
+import { applyFont, applySize, applyTheme } from "@/components/appearance";
 import { LogoMark } from "@/components/brand/LogoMark";
 import { Icon } from "@/components/Icon";
 import { NotesSidebar } from "@/components/NotesSidebar";
@@ -133,6 +133,7 @@ export function AppShell() {
       const current = readUiPrefs();
       applyTheme(current.theme);
       applyFont(current.font);
+      applySize(current.size);
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);

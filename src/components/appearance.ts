@@ -9,3 +9,8 @@ export function applyTheme(theme: UiPrefs["theme"]) {
 export function applyFont(font: UiPrefs["font"]) {
   document.documentElement.dataset.font = font;
 }
+
+/** Writes the text size to <html>, read by the --write-scale rule in globals.css. */
+export function applySize(size: UiPrefs["size"]) {
+  document.documentElement.dataset.size = size;
+}

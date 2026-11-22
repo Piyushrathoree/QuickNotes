@@ -7,7 +7,7 @@
   /* The one source for code type. Geist Mono is loaded in layout.tsx; the rest are fallbacks. */
   --editor-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-family: var(--write-font);
-  font-size: 1rem;
+  font-size: calc(1rem * var(--write-scale, 1));
   line-height: 1.75rem;
   color: var(--text);
 }
@@ -15,7 +15,7 @@
 /* The handwritten font reads small at 16px, so its body text is a touch larger. The 28px row stays the same,
    so the ruled lines still line up. */
 :root[data-font="hand"] .note-editor {
-  font-size: 1.125rem;
+  font-size: calc(1.125rem * var(--write-scale, 1));
 }
 
 /* CodeMirror puts an empty inline image next to each widget. Its default is 1em tall, which would grow the row. */
@@ -38,18 +38,18 @@
 /* ---- Headings: bigger and bolder, still one 28px row each ---- */
 
 .note-editor .cm-line.md-h1 {
-  font-size: 1.5625rem;
+  font-size: calc(1.5625rem * var(--write-scale, 1));
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .note-editor .cm-line.md-h2 {
-  font-size: 1.3125rem;
+  font-size: calc(1.3125rem * var(--write-scale, 1));
   font-weight: 700;
 }
 
 .note-editor .cm-line.md-h3 {
-  font-size: 1.125rem;
+  font-size: calc(1.125rem * var(--write-scale, 1));
   font-weight: 600;
 }
 

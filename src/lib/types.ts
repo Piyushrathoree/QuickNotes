@@ -48,3 +48,4 @@ export interface NoteStore {
 export function deriveTitle(content: string): string {
   return content.split(/\r?\n/, 1)[0]?.trim() || "Untitled note";
 }
+  size: "small" | "medium" | "large" | "xlarge";

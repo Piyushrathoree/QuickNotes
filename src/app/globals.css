@@ -75,6 +75,23 @@
   --write-font: var(--font-plex-mono), ui-monospace, monospace;
 }
 
+/* Text size multiplies the note's type. Rows stay 28px, so the ruled grid never moves. */
+:root {
+  --write-scale: 1;
+}
+
+:root[data-size="small"] {
+  --write-scale: 0.875;
+}
+
+:root[data-size="large"] {
+  --write-scale: 1.125;
+}
+
+:root[data-size="xlarge"] {
+  --write-scale: 1.25;
+}
+
 @theme inline {
   --color-background: var(--canvas);
   --color-foreground: var(--text);

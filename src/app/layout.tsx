@@ -113,6 +113,9 @@ const appearanceBootstrap = `
     const font = prefs && prefs.font;
     document.documentElement.dataset.font =
       font === "sans" || font === "serif" || font === "mono" ? font : "hand";
+    const size = prefs && prefs.size;
+    document.documentElement.dataset.size =
+      size === "small" || size === "large" || size === "xlarge" ? size : "medium";
     // Desktop sidebar width is driven by this attribute (see .sb-aside in globals.css), so it is right before first paint.
     document.documentElement.dataset.sidebar = prefs && prefs.sidebarOpen === false ? "collapsed" : "open";
   } catch {}

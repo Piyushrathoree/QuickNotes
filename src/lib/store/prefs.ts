@@ -12,9 +12,15 @@ export const defaultUiPrefs: UiPrefs = {
   // The app is light until the visitor picks dark with the theme toggle. The OS colour scheme is never read.
   theme: "light",
   font: "hand",
+  size: "medium",
 };
 
 const FONT_OPTIONS: readonly UiPrefs["font"][] = ["hand", "sans", "serif", "mono"];
+const SIZE_OPTIONS: readonly UiPrefs["size"][] = ["small", "medium", "large", "xlarge"];
+
+function isSize(value: unknown): value is UiPrefs["size"] {
+  return SIZE_OPTIONS.some((option) => option === value);
+}
 
 function isFont(value: unknown): value is UiPrefs["font"] {
   return FONT_OPTIONS.some((option) => option === value);
@@ -61,6 +67,7 @@ function parseUiPrefs(raw: string | null): UiPrefs {
           : defaultUiPrefs.sidebarOpen,
       theme: isTheme(candidate.theme) ? candidate.theme : defaultUiPrefs.theme,
       font: isFont(candidate.font) ? candidate.font : defaultUiPrefs.font,
+      size: isSize(candidate.size) ? candidate.size : defaultUiPrefs.size,
     };
   } catch {
     return unsetPrefs();
@@ -88,6 +95,7 @@ export function writeUiPrefs(prefs: UiPrefs): boolean {
     sidebarOpen: Boolean(prefs.sidebarOpen),
     theme: isTheme(prefs.theme) ? prefs.theme : defaultUiPrefs.theme,
     font: isFont(prefs.font) ? prefs.font : defaultUiPrefs.font,
+    size: isSize(prefs.size) ? prefs.size : defaultUiPrefs.size,
   };
   cachedSnapshot = next;
 
