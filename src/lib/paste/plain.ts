@@ -81,6 +81,8 @@ function convertTabularRuns(text: string): string {
     const divider = header.map(() => "---");
     result.push(formatTableRow(header), formatTableRow(divider));
     for (const row of rows.slice(1)) result.push(formatTableRow(row.map(escapeTableCell)));
+    // GFM reads a line right after a table as one more row, so a table always ends with a blank line.
+    if (end < lines.length && lines[end].trim() !== "") result.push("");
     index = end;
   }
 
@@ -102,8 +104,8 @@ function replaceIndentTabs(text: string): string {
 function convertListLine(line: string): string {
   const indentation = line.match(/^[ \t]*/)?.[0] ?? "";
   const content = line.slice(indentation.length);
-  const marker = /^(?:[•◦▪●○·–—*]|\d+\)|\(\d+\)|[A-Za-z]\))\s+(.*)$/u.exec(content);
-  const taskSource = marker ? marker[1] : content;
+  const marker = /^(?:(\d+[.)]|\(\d+\)|[A-Za-z]\))|([•◦▪●○·–—*]))\s+(.*)$/u.exec(content);
+  const taskSource = marker ? marker[3] : content;
   const task = /^(☐|☑|✓|\[\s\]|\[[xX]\])\s*(.*)$/u.exec(taskSource);
 
   if (task) {
@@ -112,9 +114,17 @@ function convertListLine(line: string): string {
   }
 
   if (marker) {
-    const isNumbered = /^(?:\d+\)|\(\d+\)|[A-Za-z]\))/.test(content);
-    return `${indentation}${isNumbered ? "1." : "-"} ${marker[1]}`;
+    const ordered = marker[1] ? orderedListMarker(marker[1]) : null;
+    return `${indentation}${ordered ?? "-"} ${marker[3]}`;
   }
 
   return line;
+}
+
+function orderedListMarker(marker: string): string {
+  const number = /^(\d+)[.)]$/.exec(marker) ?? /^\((\d+)\)$/.exec(marker);
+  if (number) return `${number[1]}.`;
+  const letter = /^([A-Za-z])\)$/.exec(marker);
+  if (letter) return `${letter[1].toLowerCase().charCodeAt(0) - 96}.`;
+  return "1.";
 }

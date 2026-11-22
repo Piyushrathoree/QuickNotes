@@ -9,6 +9,8 @@ import { editorInteractions } from "./interactions";
 import { livePreview } from "./livePreview";
 import { markdownSupport } from "./markdown";
 import { smartPaste } from "./smartPaste";
+import { tablePipeInputHandler } from "./tableCommands";
+import { tablePreview } from "./tables";
 import { codeHighlight, editorBaseTheme } from "./theme";
 import "./editor.css";
 
@@ -59,10 +61,12 @@ function createState(doc: string, wiring: Wiring, readOnly: boolean, placeholder
       EditorView.lineWrapping,
       markdownSupport,
       livePreview,
+      tablePreview,
       codeHighlight,
       editorBaseTheme,
       editorKeymap(wiring.bridge),
       fenceExitOnBacktick,
+      tablePipeInputHandler,
       smartPaste(),
       editorInteractions,
       wiring.compartments.readOnly.of(readOnlyExtension(readOnly)),

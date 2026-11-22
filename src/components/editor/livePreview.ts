@@ -131,6 +131,11 @@ function build(view: EditorView): Built {
         }
 
         switch (name) {
+          // Tables have their own StateField replacement. Skip their descendants so inline preview marks do not
+          // overlap the block widget or partially style the raw Markdown while a table is being edited.
+          case "Table":
+            return false;
+
           case "HeaderMark": {
             const line = doc.lineAt(ref.from);
             // The "#" marker and the space after it.

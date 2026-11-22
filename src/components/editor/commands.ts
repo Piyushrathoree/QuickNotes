@@ -9,6 +9,7 @@ import {
   QUOTE_PREFIX,
   toggleTaskAt,
 } from "./syntax";
+import { onTableBackspace, onTableEnter, onTableTab, tableKeyBindings } from "./tableCommands";
 
 export interface EditorBridge {
   /** ArrowUp from the first line, or Backspace at the very start, moves focus to the end of the title. */
@@ -312,10 +313,11 @@ export const fenceExitOnBacktick = EditorView.inputHandler.of((view, from, to, t
 /** The editor's own keys. Prec.highest, so they run before the default keymap. */
 export function editorKeymap(bridge: EditorBridge): Extension {
   const bindings: KeyBinding[] = [
-    { key: "Enter", run: onEnter },
-    { key: "Backspace", run: (view) => onBackspace(view, bridge) },
-    { key: "Tab", run: (view) => onTab(view, false) },
-    { key: "Shift-Tab", run: (view) => onTab(view, true) },
+    { key: "Enter", run: (view) => onTableEnter(view) || onEnter(view) },
+    { key: "Backspace", run: (view) => onTableBackspace(view) || onBackspace(view, bridge) },
+    { key: "Tab", run: (view) => onTableTab(view, false) || onTab(view, false) },
+    { key: "Shift-Tab", run: (view) => onTableTab(view, true) || onTab(view, true) },
+    ...tableKeyBindings,
     { key: "Mod-Enter", run: onModEnter },
     { key: "ArrowDown", run: onArrowDown },
     { key: "ArrowUp", run: (view) => onArrowUp(view, bridge) },

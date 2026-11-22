@@ -30,6 +30,7 @@ const markdown: [string, string][] = [
   ["**bold**, *italic*, ~~strike~~", "Inline styles"],
   ["`code`", "Inline code"],
   ["[text](https://…)", "Link (Ctrl/Cmd+click to open)"],
+  ["| a | b |", "Table (renders as a grid; Tab moves between cells)"],
 ];
 
 const shortcuts: [string, string][] = [
@@ -37,6 +38,7 @@ const shortcuts: [string, string][] = [
   ["Ctrl/⌘ + S", "Save the note to your account (when signed in)"],
   ["Ctrl/⌘ + B", "Bold in the editor; elsewhere, show or hide the sidebar"],
   ["Ctrl/⌘ + I", "Italic"],
+  ["Ctrl/⌘ + Alt + T", "Insert a table"],
   ["Tab / Shift + Tab", "Indent or outdent a list item"],
   ["Ctrl/⌘ + Enter", "Leave a code block, or tick a checklist item"],
   ["Enter (in the title)", "Jump to the note body"],
