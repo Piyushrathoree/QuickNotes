@@ -57,7 +57,6 @@ export const metadata: Metadata = {
   title: { default: site.title, template: `%s · ${site.name}` },
   description: site.description,
   applicationName: site.name,
-  keywords: [...site.keywords],
   authors: [site.author],
   creator: site.author.name,
   publisher: site.author.name,

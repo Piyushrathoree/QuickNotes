@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -216,7 +217,7 @@ export function WritingPad({ store, handleRef, shareController }: WritingPadProp
   function focusPad(event: MouseEvent<HTMLDivElement>) {
     const target = event.target;
     if (!(target instanceof Node) || !event.currentTarget.contains(target)) return;
-    if (target instanceof Element && target.closest(".cm-editor, input, button")) return;
+    if (target instanceof Element && target.closest(".cm-editor, input, button, a")) return;
     focusEditorEnd();
   }
 
@@ -291,7 +292,14 @@ export function WritingPad({ store, handleRef, shareController }: WritingPadProp
       </div>
 
       {/* The strip is outside the scrolling sheet. Its height is 32px, or 56px plus the home-indicator inset on phones. */}
-      <div className="pad-strip flex shrink-0 items-center justify-end px-3">
+      <div className="pad-strip flex shrink-0 items-center justify-between gap-2 px-3">
+        <Link
+          href="/about"
+          prefetch={false}
+          className="inline-flex min-h-7 shrink-0 items-center rounded-sm text-xs text-muted-foreground underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          About Quick Notes
+        </Link>
         <div className="flex min-w-0 items-center gap-2 rounded-md bg-pad/90 px-1.5 text-xs text-muted-foreground tabular-nums">
           <ExportMenu content={content} />
           <span className="hidden min-[360px]:inline">{size}</span>

@@ -7,9 +7,9 @@ import { site } from "@/lib/site";
 import { aboutStructuredData } from "@/lib/structuredData";
 
 // Already names the brand, so it opts out of the "· Quick Notes" title template.
-const title = "About Quick Notes — Features, Markdown Shortcuts & FAQ";
+const title = "Quick Notes Guide — Browser Notes, Checklists & Markdown";
 const description =
-  "How Quick Notes works: a free online notepad with live Markdown, .md and .txt export, keyboard shortcuts, and optional sync across devices. Answers to common questions.";
+  "Learn to take notes online with Quick Notes. Write without signing up, make Markdown checklists, export text files, and share saved notes by link.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -81,9 +81,33 @@ export default function AboutPage() {
         </nav>
 
         <h1 className="mt-6 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Quick Notes: a free online notepad with live Markdown
+          How to take notes online with Quick Notes
         </h1>
-        <p className="mt-4 text-[17px] leading-8 text-secondary-foreground">{site.summary}</p>
+        <p className="mt-4 text-[17px] leading-8 text-secondary-foreground">
+          Quick Notes is a free, open source notes app for your web browser. Use it as an online scratchpad for a quick
+          note, a checklist, or a longer Markdown draft. You can start writing on a phone or computer without an account.
+        </p>
+
+        <h2 className={h2}>Write a quick note without signing up</h2>
+        <ol className="mt-3 list-decimal space-y-2 pl-5 text-[15px] leading-7 text-secondary-foreground">
+          <li>
+            <Link href="/" className="font-medium text-brand underline-offset-4 hover:underline">
+              Open Quick Notes
+            </Link>{" "}
+            and type a title or start writing in the body.
+          </li>
+          <li>Choose New note for a separate draft. Your recent notes are listed in the sidebar.</li>
+          <li>Use the download button to keep a copy as a Markdown (.md) or plain text (.txt) file.</li>
+        </ol>
+        <p className={p}>
+          Guest edits are saved in the browser on that device. Export anything you want to keep before clearing browser data.
+        </p>
+
+        <h2 className={h2}>Save across devices or share a note by link</h2>
+        <p className={p}>
+          With a free account, press Save to store the current note in the cloud. To let someone read a saved note, open
+          Share and turn on the view-only link. You can turn the link off from the same menu.
+        </p>
 
         <h2 className={h2}>What you can do</h2>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -94,8 +118,12 @@ export default function AboutPage() {
           ))}
         </ul>
 
-        <h2 className={h2}>Markdown you can type</h2>
-        <p className={p}>Formatting appears as you type, and the note is still saved as plain Markdown text.</p>
+        <h2 className={h2}>Make checklists and format notes with live Markdown</h2>
+        <p className={p}>
+          Start a line with <code>- [ ]</code> and a space to make a checklist item you can tick. Start with{" "}
+          <code>##</code> and a space for a heading. Formatting appears as you type, and the note is still saved as
+          plain Markdown text.
+        </p>
         <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-pad">
           <table className="w-full border-collapse">
             <thead>
@@ -156,6 +184,15 @@ export default function AboutPage() {
             create a token
           </Link>
           . OAuth sign-in is planned; clients that require OAuth are not supported yet.
+        </p>
+
+        <h2 className={h2}>Compare note-taking apps</h2>
+        <p className={p}>
+          See how Quick Notes fits alongside other tools for browser drafts, sharing by link, and organizing a knowledge base. Read the{" "}
+          <Link href="/compare" className="font-medium text-brand underline-offset-4 hover:underline">
+            comparison with Notes.io, QuickNote.io, Notion, and Obsidian
+          </Link>
+          .
         </p>
 
         <h2 className={h2}>Open source</h2>

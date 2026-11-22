@@ -15,35 +15,25 @@ function resolveSiteUrl(): string {
 
 export const site = {
   name: "Quick Notes",
+  alternateNames: ["QuickNotes", "QuickNotes.site"],
   url: resolveSiteUrl(),
   /** <title> on the home page. Keep under ~60 characters. */
-  title: "Quick Notes — Free Online Notepad with Live Markdown",
+  title: "Quick Notes — Free Online Notepad, No Sign-Up",
   /** Meta description. Keep under ~160 characters. */
   description:
-    "A free online notepad that opens instantly. Write with live Markdown, export to .md or .txt, and sync across devices with an optional account.",
+    "Write quick notes and checklists in your browser with live Markdown. No sign-up needed. Drafts auto-save locally. Export to Markdown or plain text.",
   /** Longer plain-language summary for JSON-LD, the About page and llms.txt. */
   summary:
     "Quick Notes is a free, open-source online notepad. Open the page and start typing — no sign-up needed. Notes save automatically in your browser, Markdown formats as you type (bullets, numbered lists, checklists, headings, horizontal rules and code blocks with syntax highlighting), and any note can be downloaded as a Markdown (.md) or plain text (.txt) file. Create a free account with an email and password, then press Save to keep your notes in the cloud and open them on any device. Signed-in users can connect MCP-compatible AI assistants to their cloud notes with personal access tokens; OAuth sign-in is planned.",
   tagline: "A free online notepad with live Markdown",
-  keywords: [
-    "online notepad",
-    "quick notes",
-    "free notepad",
-    "notes app",
-    "markdown notes",
-    "markdown editor online",
-    "notepad no sign up",
-    "write notes online",
-    "simple notes app",
-    "text editor online",
-  ],
   locale: "en_US",
   language: "en",
   author: { name: "Piyushrathoree", url: "https://github.com/Piyushrathoree" },
   repo: "https://github.com/Piyushrathoree/QuickNotes",
   license: "https://opensource.org/licenses/MIT",
-  /** Date the public pages last changed meaningfully (used in the sitemap). */
-  updated: "2026-11-21",
+  /** Dates of meaningful public page changes for the sitemap. */
+  updated: "2026-11-22",
+  mcpUpdated: "2026-11-21",
   colors: { light: "#efebdf", dark: "#242423", ink: "#3d3d3a", paper: "#f8f5ec" },
   features: [
     "Opens straight into a blank note — no sign-up required",

@@ -44,6 +44,8 @@ Set these values in Vercel under **Project → Settings → Environment Variable
 
 Enable **Web Analytics** in the project's Vercel dashboard, then deploy. Quick Notes excludes password reset and shared note URLs from analytics.
 
+For Google indexing, verify the domain in [Google Search Console](https://search.google.com/search-console), submit the production `/sitemap.xml`, and use URL Inspection to request indexing of the homepage, `/about`, and `/compare`.
+
 ## MCP server
 
 Quick Notes exposes a stateless MCP Streamable HTTP endpoint at /api/mcp. Sign in, open the account menu, choose **Connect AI**, then create a read-only or read-and-write personal access token at /connect. The full token is shown once; copy it into your client configuration. Use the endpoint URL shown on /mcp or /connect.
