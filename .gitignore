@@ -19,6 +19,14 @@
 
 # production
 /build
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/.expo/
+apps/mobile/.expo-export/
+apps/mobile/dist/
+apps/mobile/*.jks
+apps/mobile/*.keystore
+apps/mobile/credentials.json
 
 # misc
 .DS_Store
