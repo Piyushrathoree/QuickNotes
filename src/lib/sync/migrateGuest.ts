@@ -13,15 +13,17 @@ export interface GuestMigrationResult {
 
 /**
  * Sends one guest note to the account. Returns true when the note can leave guest storage.
- * A 404 means this id was deleted on the account with a newer timestamp, so retrying cannot
- * succeed and the note is treated as settled. Other failures (offline, 401, 5xx) are retried.
+ * Only a confirmed live same-content result lets a source note leave guest storage.
  */
 async function sendGuestNote(note: GuestNoteRecord): Promise<boolean> {
   try {
-    await saveNote({ id: note.id, content: note.content, updatedAt: note.updatedAt });
-    return true;
+    const response = await saveNote({ id: note.id, content: note.content, baseRevision: null });
+    return response.content === note.content;
   } catch (error) {
-    return error instanceof NotesApiError && error.kind === "not-found";
+    if (error instanceof NotesApiError && error.kind === "conflict" && error.current) {
+      return error.current.content === note.content;
+    }
+    return false;
   }
 }
 
