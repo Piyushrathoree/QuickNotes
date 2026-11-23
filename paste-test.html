@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Paste test</title>
+<style>body{font-family:Georgia,serif;max-width:760px;margin:32px auto;padding:0 16px;line-height:1.5}
+.box{border:2px dashed #999;padding:16px;margin:24px 0;border-radius:8px}h4{margin:0 0 8px;font:600 13px system-ui;color:#c33}</style></head>
+<body>
+<p><b>How to use:</b> drag-select a box below (or click in it and press Ctrl+A is NOT enough: select with the mouse), press Ctrl+C, then paste into a Quick Notes body.</p>
+
+<div class="box" id="a"><h4>1 · Messy web article (headings, nested lists, table, code, quote, links, junk)</h4>
+<h1>Weekend &nbsp;Trip&nbsp;Plan</h1>
+<p>We leave <b>Friday</b> at <i>6pm</i>, <s>not Thursday</s>. Read <a href="https://example.com/rome">the Rome guide</a> or <a href="javascript:alert(1)">this sketchy link</a>.</p>
+<script>alert("should vanish")</script><style>p{color:red}</style>
+<h2>Packing</h2>
+<ul><li>Documents
+  <ul><li>Passports<ul><li>check expiry!</li></ul></li><li>Insurance</li></ul></li>
+<li>Clothes</li></ul>
+<ol><li>Book taxi</li><li>Print tickets</li><li>Water plants</li></ol>
+<blockquote><p>Travel is the only thing you buy that makes you richer.</p></blockquote>
+<table border="1"><tr><th>Day</th><th>City</th><th>Budget</th></tr><tr><td>Fri</td><td>Rome</td><td>€120</td></tr><tr><td>Sat</td><td>Florence</td><td>€95</td></tr></table>
+<p>Quick snippet:</p>
+<pre><code class="language-js">const total = 120 + 95;
+console.log(`Total: ${total}`);</code></pre>
+<p>Run <code>npm test</code> before leaving.</p>
+<hr>
+<p><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="tracking pixel"> Footer text &mdash; © 2026</p>
+</div>
+
+<div class="box" id="b"><h4>2 · Google-Docs style (inline-styled spans, no real tags)</h4>
+<p style="margin:0"><span style="font-weight:700">Meeting notes</span></p>
+<p style="margin:0"><span style="font-style:italic">Attendees: Ann, Raj, Mei</span></p>
+<p style="margin:0"><span style="font-weight:700;font-style:italic">Decision:</span><span> ship on </span><span style="text-decoration:line-through">Monday</span><span> Tuesday</span></p>
+<ul style="margin:0"><li><span>Raj owns the migration</span></li><li><span>Mei writes the announcement</span></li></ul>
+</div>
+
+<div class="box" id="c"><h4>3 · Code-editor copy (should become a code block)</h4>
+<div style="font-family:Consolas,'Courier New',monospace;white-space:pre;background:#1e1e1e;color:#d4d4d4;padding:8px"><div><span style="color:#569cd6">function</span> <span style="color:#dcdcaa">add</span>(a, b) {</div><div>  <span style="color:#c586c0">return</span> a + b;</div><div>}</div></div>
+</div>
+
+<div class="box" id="d"><h4>4 · Spreadsheet-ish table</h4>
+<table border="1"><tr><td>Item</td><td>Qty</td><td>Price</td></tr><tr><td>Milk</td><td>2</td><td>1.20</td></tr><tr><td>Eggs</td><td>12</td><td>3.50</td></tr></table>
+</div>
+</body></html>
