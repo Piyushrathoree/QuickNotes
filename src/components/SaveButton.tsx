@@ -68,8 +68,9 @@ export function useSaveAction(store: SaveStore): SaveAction {
       setPromptOpen(true);
       return;
     }
-    setAnnouncement("Couldn't save");
+    setAnnouncement(result.reason === "conflict" ? "Conflict — draft kept separately" : "Couldn't save");
     if (result.reason === "offline") toast.error(OFFLINE_MESSAGE);
+    else if (result.reason === "conflict") toast.error(result.message ?? "The cloud note changed. Your draft was kept separately.");
     else if (result.reason === "error") toast.error(ERROR_MESSAGE);
   }
 
@@ -81,13 +82,14 @@ export function useSaveAction(store: SaveStore): SaveAction {
   };
 }
 
-type View = "empty" | "guest" | "dirty" | "saving" | "saved" | "retry";
+type View = "empty" | "guest" | "dirty" | "saving" | "saved" | "retry" | "conflict";
 
 function viewOf(store: SaveStore): View {
   const note = store.activeNote;
   if (!note || note.content.trim() === "") return "empty";
   if (store.mode === "guest") return "guest";
   if (store.saveState === "saving") return "saving";
+  if (store.saveState === "conflict") return "conflict";
   if (store.saveState === "offline" || store.saveState === "error") return "retry";
   if (store.dirty || store.saveState === "unsaved") return "dirty";
   return "saved";
@@ -100,6 +102,7 @@ const LABEL: Record<View, string> = {
   saving: "Saving…",
   saved: "Saved",
   retry: "Retry",
+  conflict: "Conflict",
 };
 
 const TITLE: Partial<Record<View, string>> = {
@@ -107,6 +110,7 @@ const TITLE: Partial<Record<View, string>> = {
   guest: "Save to your account",
   dirty: "Save to your account (Ctrl/⌘+S)",
   retry: "Couldn't save. Try again.",
+  conflict: "Your draft was kept separately because the cloud note changed.",
 };
 
 const GLYPH: Record<View, IconSvgElement> = {
@@ -116,6 +120,7 @@ const GLYPH: Record<View, IconSvgElement> = {
   saving: Loading03Icon,
   saved: CheckmarkCircle02Icon,
   retry: Alert02Icon,
+  conflict: Alert02Icon,
 };
 
 const VARIANT: Record<View, string> = {
@@ -125,6 +130,7 @@ const VARIANT: Record<View, string> = {
   saving: "bg-primary text-primary-foreground",
   saved: "text-secondary-foreground",
   retry: "border border-warning/40 bg-warning/10 text-warning hover:bg-warning/15",
+  conflict: "border border-warning/40 bg-warning/10 text-warning",
 };
 
 const COMPACT_TONE: Record<View, string> = {
@@ -134,11 +140,13 @@ const COMPACT_TONE: Record<View, string> = {
   saving: "text-muted-foreground",
   saved: "text-muted-foreground",
   retry: "text-warning",
+  conflict: "text-warning",
 };
 
 const COMPACT_DOT: Partial<Record<View, string>> = {
   dirty: "bg-brand",
   retry: "bg-warning",
+  conflict: "bg-warning",
 };
 
 interface SaveButtonProps {

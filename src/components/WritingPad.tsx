@@ -56,6 +56,8 @@ function statusFor(store: Pick<NoteStore, "mode" | "saveState">, empty: boolean)
       return { label: "Offline — not saved", dot: "bg-warning" };
     case "error":
       return { label: "Couldn't save", dot: "bg-destructive" };
+    case "conflict":
+      return { label: "Conflict — draft kept separately", dot: "bg-warning" };
     default:
       return empty ? null : { label: "All changes saved", dot: "bg-success" };
   }
