@@ -3,21 +3,25 @@ export interface Note {
   content: string;
   createdAt: number;
   updatedAt: number;
+  /** Server-issued version. Local guest notes do not have one. */
+  revision?: number;
 }
 
 export interface NoteSummary {
   id: string;
   title: string;
   updatedAt: number;
+  /** Server-issued version for account notes. */
+  revision?: number;
   /** Account mode: this note has edits that are not saved to the database yet. */
   unsaved?: boolean;
 }
 
-export type SaveState = "idle" | "unsaved" | "saving" | "saved" | "offline" | "error";
+export type SaveState = "idle" | "unsaved" | "saving" | "saved" | "offline" | "error" | "conflict";
 
 export type SaveResult =
   | { ok: true }
-  | { ok: false; reason: "signed-out" | "empty" | "offline" | "error"; message?: string };
+  | { ok: false; reason: "signed-out" | "empty" | "offline" | "error" | "conflict"; message?: string };
 
 export interface UiPrefs {
   previewOpen: boolean;

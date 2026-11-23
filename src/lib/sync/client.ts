@@ -7,17 +7,23 @@ export type NotesApiErrorKind =
   | "unauthorized"
   | "server"
   | "not-found"
-  | "validation";
+  | "validation"
+  | "conflict"
+  | "refresh-required";
 
 export class NotesApiError extends Error {
   readonly kind: NotesApiErrorKind;
   readonly status: number | undefined;
+  readonly code?: string;
+  readonly current?: Note | null;
 
-  constructor(kind: NotesApiErrorKind, message: string, status?: number) {
+  constructor(kind: NotesApiErrorKind, message: string, status?: number, code?: string, current?: Note | null) {
     super(message);
     this.name = "NotesApiError";
     this.kind = kind;
     this.status = status;
+    this.code = code;
+    this.current = current;
   }
 }
 
@@ -26,12 +32,14 @@ const noteSchema = z.object({
   content: z.string(),
   createdAt: z.number(),
   updatedAt: z.number(),
+  revision: z.number().int().positive(),
 });
 
 const noteSummarySchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   updatedAt: z.number(),
+  revision: z.number().int().positive(),
 });
 
 async function fetchResponse(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
@@ -44,10 +52,22 @@ async function fetchResponse(input: RequestInfo | URL, init?: RequestInit): Prom
 
   if (!response.ok) {
     let message = `Notes API request failed (${response.status}).`;
+    let body: unknown;
     try {
-      const body: unknown = await response.json();
+      body = await response.json();
       if (typeof body === "object" && body !== null && "error" in body && typeof body.error === "string") {
         message = body.error;
+      }
+      if (typeof body === "object" && body !== null && "code" in body && typeof body.code === "string") {
+        const code = body.code;
+        const currentResult = "current" in body ? noteSchema.nullable().safeParse(body.current) : null;
+        if (response.status === 409 || code === "note_conflict") {
+          return Promise.reject(new NotesApiError("conflict", message, response.status, code,
+            currentResult?.success ? currentResult.data : undefined));
+        }
+        if (code === "refresh_required") {
+          return Promise.reject(new NotesApiError("refresh-required", message, response.status, code));
+        }
       }
     } catch {
       // The HTTP status still carries the useful error classification.
@@ -95,15 +115,25 @@ export async function fetchNote(id: string): Promise<Note> {
   return parseJson(response, noteSchema);
 }
 
-export async function saveNote(note: Pick<Note, "id" | "content" | "updatedAt">): Promise<Note> {
+export async function saveNote(note: Pick<Note, "id" | "content"> & { baseRevision: number | null }): Promise<Note> {
   const response = await fetchResponse(`/api/notes/${encodeURIComponent(note.id)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content: note.content, updatedAt: note.updatedAt }),
+    body: JSON.stringify({ content: note.content, baseRevision: note.baseRevision }),
   });
   return parseJson(response, noteSchema);
 }
 
-export async function deleteNote(id: string): Promise<void> {
-  await fetchResponse(`/api/notes/${encodeURIComponent(id)}`, { method: "DELETE" });
+export async function deleteNote(id: string, baseRevision: number): Promise<number> {
+  const response = await fetchResponse(`/api/notes/${encodeURIComponent(id)}?baseRevision=${baseRevision}`, { method: "DELETE" });
+  const result = await parseJson(response, z.object({ revision: z.number().int().positive() }));
+  return result.revision;
+}
+
+export async function restoreNote(id: string, baseRevision: number, content: string): Promise<Note> {
+  const response = await fetchResponse(`/api/notes/${encodeURIComponent(id)}/restore`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ baseRevision, content }),
+  });
+  return parseJson(response, noteSchema);
 }
