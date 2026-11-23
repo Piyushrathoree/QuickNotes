@@ -15,7 +15,7 @@ export async function GET(): Promise<Response> {
     if (!database) return serviceUnavailable();
 
     const rows = await database
-      .select({ id: notes.id, content: notes.content, updatedAt: notes.updatedAt })
+      .select({ id: notes.id, content: notes.content, updatedAt: notes.updatedAt, revision: notes.revision })
       .from(notes)
       .where(and(eq(notes.userId, userId), isNull(notes.deletedAt)))
       .orderBy(desc(notes.updatedAt));
@@ -25,6 +25,7 @@ export async function GET(): Promise<Response> {
         id: note.id,
         title: deriveTitle(note.content),
         updatedAt: note.updatedAt.getTime(),
+        revision: note.revision,
       })),
     );
   } catch {
