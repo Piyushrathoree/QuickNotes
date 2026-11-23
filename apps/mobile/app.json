@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "QuickNotes",
+    "slug": "quicknotes-android",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "site.quicknotes.app.staging",
+      "versionCode": 2,
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE"
+      ],
+      "predictiveBackGestureEnabled": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#2b2a27",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      }
+    },
+    "scheme": "quicknotes-staging",
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "root": "src/app"
+        }
+      ],
+      "expo-sqlite",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": false
+        }
+      ],
+      "expo-sharing",
+      "expo-web-browser",
+      "./plugins/withReleaseSigning",
+      "expo-font"
+    ]
+  }
+}
