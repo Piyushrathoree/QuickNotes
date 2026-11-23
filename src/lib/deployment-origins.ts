@@ -22,3 +22,18 @@ export function getDeploymentOrigins() {
   const trusted = [site, auth, production, deployment].filter((origin): origin is string => origin !== undefined);
   return { canonical: site ?? auth ?? production ?? deployment, trusted: [...new Set(trusted)] };
 }
+
+export function getExpoGoOrigin(value: string | undefined): string | undefined {
+  const configured = value?.trim();
+  if (!configured) return undefined;
+
+  try {
+    const url = new URL(configured);
+    if ((url.protocol !== "exp:" && url.protocol !== "exps:") || !url.hostname
+      || url.username || url.password || (url.pathname && url.pathname !== "/")
+      || /[?*#]/.test(configured)) throw new Error();
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    throw new Error("QUICKNOTES_EXPO_GO_ORIGIN must be an exact exp:// or exps:// origin.");
+  }
+}

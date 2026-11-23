@@ -1,10 +1,11 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 
 import { getDb } from "../db";
 import { sendResetPasswordEmail } from "./mail";
-import { getDeploymentOrigins } from "./deployment-origins";
+import { getDeploymentOrigins, getExpoGoOrigin } from "./deployment-origins";
 import { account, session, user, verification } from "../db/schema";
 
 function requiredEnv(name: string): string {
@@ -32,7 +33,10 @@ function createAuthInstance() {
   // The canonical auth URL can differ from the URL users open (for example, a custom
   // production domain or a Vercel preview). Trust only the exact origins configured
   // for this site and deployment; Better Auth rejects other origins with 403.
-  const { trusted: trustedOrigins } = getDeploymentOrigins();
+  const { trusted: webTrustedOrigins } = getDeploymentOrigins();
+  const expoGoOrigin = getExpoGoOrigin(process.env.QUICKNOTES_EXPO_GO_ORIGIN);
+  const trustedOrigins = [...webTrustedOrigins, "quicknotes-staging://"];
+  if (expoGoOrigin) trustedOrigins.push(expoGoOrigin);
 
   return betterAuth({
     appName: "Quick Notes",
@@ -60,7 +64,7 @@ function createAuthInstance() {
       },
     },
     // nextCookies must stay last so cookies set by other plugins are forwarded.
-    plugins: [nextCookies()],
+    plugins: [expo(), nextCookies()],
   });
 }
 
