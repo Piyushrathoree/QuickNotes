@@ -188,7 +188,7 @@ export function registerNoteTools(server: McpServer, context: { userId: string; 
 
         const row = await updateNote(context.userId, id, { title, body });
         if (!row) throw new ToolDomainError("Note not found");
-        return { id: row.id, title: nextTitle, updated_at: row.updatedAt.toISOString() };
+        return { id: row.id, title: splitNoteContent(row.content).title, updated_at: row.updatedAt.toISOString() };
       });
     },
   );
@@ -222,9 +222,10 @@ export function registerNoteTools(server: McpServer, context: { userId: string; 
 
         const result = await appendToNote(context.userId, id, text, separator);
         if (!result) throw new ToolDomainError("Note not found");
+        const committedTitle = splitNoteContent(result.row.content).title;
         return {
           id: result.row.id,
-          title,
+          title: committedTitle,
           updated_at: result.row.updatedAt.toISOString(),
           appended_chars: result.appendedChars,
         };

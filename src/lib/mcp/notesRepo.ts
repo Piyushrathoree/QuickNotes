@@ -5,6 +5,13 @@ import { notes } from "@/db/schema";
 import { escapeLikeQuery, joinNoteContent, makeSnippet, splitNoteContent } from "./text";
 
 type NoteRow = typeof notes.$inferSelect;
+const MAX_NOTE_CONTENT_BYTES = 1_048_576;
+
+function assertContentSize(content: string): void {
+  if (new TextEncoder().encode(content).byteLength > MAX_NOTE_CONTENT_BYTES) {
+    throw new Error("Note content must be at most 1 MiB.");
+  }
+}
 
 export interface ListedNote {
   id: string;
@@ -121,25 +128,18 @@ export async function updateNote(
   updates: { title?: string; body?: string },
 ): Promise<NoteRow | null> {
   const db = requiredDb();
-  const [current] = await db
-    .select({ content: notes.content })
-    .from(notes)
-    .where(and(eq(notes.id, id), eq(notes.userId, userId), isNull(notes.deletedAt)))
-    .limit(1);
-  if (!current) return null;
-
-  const currentParts = splitNoteContent(current.content);
-  const content = joinNoteContent(
-    updates.title ?? currentParts.title,
-    updates.body ?? currentParts.body,
-  );
-  const [row] = await db
-    .update(notes)
-    .set({ content, updatedAt: sql<Date>`now()` })
-    .where(and(eq(notes.id, id), eq(notes.userId, userId), isNull(notes.deletedAt)))
-    .returning();
-
-  return row ?? null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const [current] = await db.select({ content: notes.content, revision: notes.revision }).from(notes)
+      .where(and(eq(notes.id, id), eq(notes.userId, userId), isNull(notes.deletedAt))).limit(1);
+    if (!current) return null;
+    const currentParts = splitNoteContent(current.content);
+    const content = joinNoteContent(updates.title ?? currentParts.title, updates.body ?? currentParts.body);
+    assertContentSize(content);
+    const [row] = await db.update(notes).set({ content, updatedAt: sql<Date>`now()`, revision: sql<number>`${notes.revision} + 1` })
+      .where(and(eq(notes.id, id), eq(notes.userId, userId), eq(notes.revision, current.revision), isNull(notes.deletedAt))).returning();
+    if (row) return row;
+  }
+  throw new Error("Note changed repeatedly while updating; retry the operation.");
 }
 
 export async function appendToNote(
@@ -149,31 +149,28 @@ export async function appendToNote(
   separator: "newline" | "blank_line" | "space",
 ): Promise<{ row: NoteRow; appendedChars: number } | null> {
   const db = requiredDb();
-  const [current] = await db
-    .select({ content: notes.content })
-    .from(notes)
-    .where(and(eq(notes.id, id), eq(notes.userId, userId), isNull(notes.deletedAt)))
-    .limit(1);
-  if (!current) return null;
-
-  const { title, body } = splitNoteContent(current.content);
-  const separatorText = separator === "blank_line" ? "\n\n" : separator === "space" ? " " : "\n";
-  const appendedBody = body.length === 0 || text.length === 0 ? `${body}${text}` : `${body}${separatorText}${text}`;
-  const [row] = await db
-    .update(notes)
-    .set({ content: joinNoteContent(title, appendedBody), updatedAt: sql<Date>`now()` })
-    .where(and(eq(notes.id, id), eq(notes.userId, userId), isNull(notes.deletedAt)))
-    .returning();
-
-  return row ? { row, appendedChars: text.length } : null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const [current] = await db.select({ content: notes.content, revision: notes.revision }).from(notes)
+      .where(and(eq(notes.id, id), eq(notes.userId, userId), isNull(notes.deletedAt))).limit(1);
+    if (!current) return null;
+    const { title, body } = splitNoteContent(current.content);
+    const separatorText = separator === "blank_line" ? "\n\n" : separator === "space" ? " " : "\n";
+    const appendedBody = body.length === 0 || text.length === 0 ? `${body}${text}` : `${body}${separatorText}${text}`;
+    const content = joinNoteContent(title, appendedBody);
+    assertContentSize(content);
+    const [row] = await db.update(notes).set({ content, updatedAt: sql<Date>`now()`, revision: sql<number>`${notes.revision} + 1` })
+      .where(and(eq(notes.id, id), eq(notes.userId, userId), eq(notes.revision, current.revision), isNull(notes.deletedAt))).returning();
+    if (row) return { row, appendedChars: text.length };
+  }
+  throw new Error("Note changed repeatedly while appending; retry the operation.");
 }
 
 export async function deleteNote(userId: string, id: string): Promise<string | null> {
   const db = requiredDb();
   const [row] = await db
     .update(notes)
-    .set({ deletedAt: sql<Date>`now()`, updatedAt: sql<Date>`now()` })
-    .where(and(eq(notes.id, id), eq(notes.userId, userId)))
+    .set({ deletedAt: sql<Date>`now()`, updatedAt: sql<Date>`now()`, revision: sql<number>`${notes.revision} + 1` })
+    .where(and(eq(notes.id, id), eq(notes.userId, userId), isNull(notes.deletedAt)))
     .returning({ id: notes.id });
 
   return row?.id ?? null;
@@ -183,8 +180,8 @@ export async function restoreNote(userId: string, id: string): Promise<string | 
   const db = requiredDb();
   const [row] = await db
     .update(notes)
-    .set({ deletedAt: null, updatedAt: sql<Date>`now()` })
-    .where(and(eq(notes.id, id), eq(notes.userId, userId)))
+    .set({ deletedAt: null, updatedAt: sql<Date>`now()`, revision: sql<number>`${notes.revision} + 1` })
+    .where(and(eq(notes.id, id), eq(notes.userId, userId), sql`${notes.deletedAt} IS NOT NULL`))
     .returning({ id: notes.id });
 
   return row?.id ?? null;
