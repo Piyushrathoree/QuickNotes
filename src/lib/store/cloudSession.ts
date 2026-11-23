@@ -4,7 +4,7 @@
 //
 // Plain class, no React: the hook subscribes to it, and tests drive it with fake storage and API.
 
-import { NotesApiError, deleteNote, fetchNote, fetchNotes, saveNote } from "@/lib/sync/client";
+import { NotesApiError, deleteNote, fetchNote, fetchNotes, restoreNote, saveNote } from "@/lib/sync/client";
 import {
   readCloudCache,
   registerLiveSession,
@@ -34,7 +34,8 @@ export interface CloudApi {
   fetchNotes(): Promise<NoteSummary[]>;
   fetchNote(id: string): Promise<Note>;
   saveNote(note: SaveAttempt): Promise<Note>;
-  deleteNote(id: string): Promise<void>;
+  deleteNote(id: string, baseRevision: number): Promise<number>;
+  restoreNote(id: string, baseRevision: number, content: string): Promise<Note>;
 }
 
 export interface CloudStorage {
@@ -68,12 +69,12 @@ export const EMPTY_CLOUD_SNAPSHOT: CloudSnapshot = {
   ready: false,
 };
 
-type FailureKind = "offline" | "signed-out" | "not-found" | "error";
+type FailureKind = "offline" | "signed-out" | "not-found" | "conflict" | "error";
 
 interface Failure {
   /** The note the failure belongs to, or null for list and delete failures. */
   noteId: string | null;
-  state: "offline" | "error";
+  state: "offline" | "error" | "conflict";
   message?: string;
 }
 
@@ -82,6 +83,7 @@ function failureKindOf(error: unknown): FailureKind {
     if (error.kind === "offline") return "offline";
     if (error.kind === "unauthorized") return "signed-out";
     if (error.kind === "not-found") return "not-found";
+    if (error.kind === "conflict") return "conflict";
     return "error";
   }
   return error instanceof TypeError ? "offline" : "error";
@@ -124,7 +126,7 @@ export class CloudSession {
     this.activeId = cache?.activeId;
     this.syncedAt = cache?.syncedAt;
     for (const note of this.notes) {
-      if (note.deletedAt === undefined && note.baseUpdatedAt !== null && !note.dirty) {
+      if (note.deletedAt === undefined && note.baseRevision !== null && !note.dirty) {
         this.saved.set(note.id, note.content);
       }
     }
@@ -239,7 +241,7 @@ export class CloudSession {
   retryDeletes(): void {
     if (this.discarded) return;
     for (const note of this.notes) {
-      if (note.deletedAt !== undefined && note.baseUpdatedAt !== null) void this.syncDelete(note.id);
+      if (note.deletedAt !== undefined && note.baseRevision !== null) void this.syncDelete(note.id);
     }
   }
 
@@ -262,7 +264,7 @@ export class CloudSession {
     this.pruneGhosts(id);
     this.notes = [
       ...this.notes,
-      { id, content: "", createdAt: now, updatedAt: now, baseUpdatedAt: null, dirty: true },
+      { id, content: "", createdAt: now, updatedAt: now, baseRevision: null, dirty: true },
     ];
     this.touched.add(id);
     this.activeId = id;
@@ -277,7 +279,7 @@ export class CloudSession {
 
     // Clean again when the text is back to what the database holds.
     const saved = this.saved.get(note.id);
-    const dirty = note.baseUpdatedAt === null || saved === undefined || content !== saved;
+    const dirty = note.baseRevision === null || saved === undefined || content !== saved;
     const next: CloudNote = {
       ...note,
       content,
@@ -303,7 +305,7 @@ export class CloudSession {
     this.touched.add(id);
     this.server.delete(id);
 
-    if (local.baseUpdatedAt === null && !savingNow) {
+    if (local.baseRevision === null && !savingNow) {
       // Never reached the database: nothing to delete there.
       this.rememberDeleted(local);
       this.notes = this.notes.filter((note) => note.id !== id);
@@ -319,7 +321,7 @@ export class CloudSession {
     }
     this.persistNow();
     // A save in flight finishes first; syncDelete waits for it, so the delete is not undone by it.
-    if (local.baseUpdatedAt !== null) void this.syncDelete(id);
+    if (local.baseRevision !== null) void this.syncDelete(id);
     this.emit();
   }
 
@@ -351,7 +353,7 @@ export class CloudSession {
     return {
       notes,
       activeNote,
-      activeNotePersisted: active !== undefined && active.baseUpdatedAt !== null,
+      activeNotePersisted: active !== undefined && active.baseRevision !== null,
       saveState: this.deriveSaveState(active),
       dirty: active ? hasUnsavedEdits(active) : false,
       ready: this.serverSettled || notes.length > 0,
@@ -362,7 +364,7 @@ export class CloudSession {
     if (this.persistFailed) return "error";
     if (!note) return "idle";
     if (this.saving.has(note.id)) return "saving";
-    if (!hasUnsavedEdits(note)) return note.baseUpdatedAt === null ? "idle" : "saved";
+    if (!hasUnsavedEdits(note)) return note.baseRevision === null ? "idle" : "saved";
     if (this.failure && (this.failure.noteId === null || this.failure.noteId === note.id)) {
       return this.failure.state;
     }
@@ -420,7 +422,7 @@ export class CloudSession {
       this.activeId,
     );
     const written = this.env.storage.write({
-      version: 1,
+      version: 2,
       notes: merged,
       activeId: this.activeId,
       syncedAt: this.syncedAt,
@@ -482,7 +484,7 @@ export class CloudSession {
               content: note.content,
               createdAt: note.createdAt,
               updatedAt: note.updatedAt,
-              baseUpdatedAt: note.updatedAt,
+              baseRevision: note.revision!,
               dirty: false,
             },
           ];
@@ -547,7 +549,7 @@ export class CloudSession {
       content: note.content,
       createdAt: note.createdAt,
       updatedAt: note.updatedAt,
-      baseUpdatedAt: note.updatedAt,
+      baseRevision: note.revision!,
       dirty: false,
       deletedAt: this.env.now(),
     };
@@ -578,12 +580,21 @@ export class CloudSession {
       const pendingSave = this.saving.get(id);
       if (pendingSave) await pendingSave;
       if (this.discarded) return;
+      let deletedRevision: number | undefined;
+      const pendingDelete = this.notes.find((note) => note.id === id && note.deletedAt !== undefined);
+      if (!pendingDelete || pendingDelete.baseRevision === null) return;
       try {
-        await this.env.api.deleteNote(id);
+        deletedRevision = await this.env.api.deleteNote(id, pendingDelete.baseRevision);
       } catch (error) {
         if (this.discarded) return;
         const kind = failureKindOf(error);
+        if (kind === "not-found") deletedRevision = undefined;
         if (kind !== "not-found") {
+          if (kind === "conflict") {
+            if (error instanceof NotesApiError) this.recoverDeleteConflict(id, error.current ?? null);
+            this.failure = { noteId: id, state: "error", message: "This note changed elsewhere. Refresh before deleting it." };
+            return;
+          }
           this.failure = {
             noteId: null,
             state: kind === "offline" ? "offline" : "error",
@@ -597,6 +608,7 @@ export class CloudSession {
       // Only drop the tombstone if the note was not restored while the delete was in flight.
       const tombstone = this.notes.find((note) => note.id === id && note.deletedAt !== undefined);
       if (tombstone) {
+        if (deletedRevision !== undefined) tombstone.deletedRevision = deletedRevision;
         this.notes = this.notes.filter((note) => note !== tombstone);
         this.rememberDeleted(tombstone);
         this.touched.add(id);
@@ -612,6 +624,38 @@ export class CloudSession {
     return operation;
   }
 
+  private recoverDeleteConflict(id: string, current: Note | null): void {
+    const local = this.notes.find((note) => note.id === id && note.deletedAt !== undefined);
+    if (!local) return;
+    const sameText = current !== null && current.content === local.content;
+    const keepDraft = !sameText;
+    const replacement: CloudNote[] = [];
+    if (current) {
+      replacement.push({
+        id, content: current.content, createdAt: current.createdAt, updatedAt: current.updatedAt,
+        baseRevision: current.revision!, dirty: false,
+      });
+      this.server.set(id, { id, title: deriveTitle(current.content), updatedAt: current.updatedAt, revision: current.revision! });
+      this.saved.set(id, current.content);
+    } else {
+      this.server.delete(id);
+    }
+    if (keepDraft) {
+      const draft: CloudNote = {
+        id: this.env.newId(), content: local.content, createdAt: local.createdAt, updatedAt: local.updatedAt,
+        baseRevision: null, dirty: true,
+      };
+      replacement.push(draft);
+      this.activeId = draft.id;
+      this.touched.add(draft.id);
+    } else {
+      this.activeId = id;
+    }
+    this.notes = [...this.notes.filter((note) => note.id !== id), ...replacement];
+    this.touched.add(id);
+    this.persistSoon();
+  }
+
   private async restoreNote(id: string): Promise<void> {
     if (this.discarded) return;
     const pending = this.deleting.get(id);
@@ -623,21 +667,45 @@ export class CloudSession {
     const base = current ?? this.recentlyDeleted.get(id);
     if (!base) return;
 
-    const restored: CloudNote = {
-      id,
-      content: base.content,
-      createdAt: base.createdAt,
-      updatedAt: nextUpdatedAt(base.updatedAt, this.env.now()),
-      baseUpdatedAt: null,
-      dirty: true,
-    };
-    this.notes = [...this.notes.filter((note) => note.id !== id), restored];
-    this.recentlyDeleted.delete(id);
-    this.touched.add(id);
-    this.activeId = id;
-    this.persistNow();
-    this.emit();
-    await this.saveById(id);
+    if (base.deletedRevision === undefined) {
+      // Cancel a queued local delete or reopen a draft that was never uploaded.
+      // If the server outcome is unknown, keep a new local copy for recovery.
+      const idForRestore = current || base.baseRevision === null ? id : this.env.newId();
+      const restored = {
+        ...base,
+        id: idForRestore,
+        deletedAt: undefined,
+        baseRevision: idForRestore === id ? base.baseRevision : null,
+        dirty: idForRestore !== id || base.dirty,
+      };
+      this.notes = [...this.notes.filter((note) => note.id !== id), restored];
+      this.recentlyDeleted.delete(id);
+      this.touched.add(id);
+      this.touched.add(idForRestore);
+      this.activeId = idForRestore;
+      this.persistNow();
+      this.emit();
+      return;
+    }
+    try {
+      const response = await this.env.api.restoreNote(id, base.deletedRevision, base.content);
+      if (this.discarded) return;
+      const restored: CloudNote = {
+        id, content: response.content, createdAt: response.createdAt, updatedAt: response.updatedAt,
+        baseRevision: response.revision!, dirty: false,
+      };
+      this.notes = [...this.notes.filter((note) => note.id !== id), restored];
+      this.server.set(id, { id, title: deriveTitle(response.content), updatedAt: response.updatedAt, revision: response.revision! });
+      this.saved.set(id, response.content);
+      this.recentlyDeleted.delete(id);
+      this.touched.add(id);
+      this.activeId = id;
+      this.persistNow();
+      this.emit();
+    } catch (error) {
+      this.failure = { noteId: id, state: "error", message: error instanceof NotesApiError && error.kind === "conflict" ? "This note changed after deletion and cannot be restored from this version." : SAVE_FAILED_MESSAGE };
+      this.emit();
+    }
   }
 
   private saveById(id: string): Promise<SaveResult> {
@@ -656,7 +724,7 @@ export class CloudSession {
     }
 
     if (this.failure?.noteId === id) this.failure = null;
-    const attempt: SaveAttempt = { id, content: note.content, updatedAt: note.updatedAt };
+    const attempt: SaveAttempt = { id, content: note.content, baseRevision: note.baseRevision };
     const operation = this.send(attempt).finally(() => {
       this.saving.delete(id);
       // A delete asked for while this save was in flight runs now, after the PUT.
@@ -681,6 +749,11 @@ export class CloudSession {
     } catch (error) {
       if (this.discarded) return { ok: false, reason: "signed-out" };
       const kind = this.env.isOffline() ? "offline" : failureKindOf(error);
+      if (kind === "conflict" && error instanceof NotesApiError) {
+        const draftId = this.applyConflict(attempt.id, error.current ?? null);
+        this.failure = { noteId: draftId ?? attempt.id, state: "conflict", message: "This note changed elsewhere. Your text was kept as a separate draft." };
+        return { ok: false, reason: "conflict", message: "This note changed elsewhere. Your text was kept as a separate draft." };
+      }
       if (kind === "offline") {
         this.failure = { noteId: attempt.id, state: "offline" };
         return { ok: false, reason: "offline" };
@@ -694,12 +767,39 @@ export class CloudSession {
     }
   }
 
+  private applyConflict(id: string, current: Note | null): string | null {
+    const local = this.notes.find((note) => note.id === id && note.deletedAt === undefined);
+    if (!local) return null;
+    const copy: CloudNote = {
+      id: this.env.newId(), content: local.content, createdAt: local.createdAt, updatedAt: local.updatedAt,
+      baseRevision: null, dirty: true,
+    };
+    if (current) {
+      const remote: CloudNote = {
+        id, content: current.content, createdAt: current.createdAt, updatedAt: current.updatedAt,
+        baseRevision: current.revision!, dirty: false,
+      };
+      this.notes = [...this.notes.filter((note) => note.id !== id), remote, copy];
+      this.server.set(id, { id, title: deriveTitle(current.content), updatedAt: current.updatedAt, revision: current.revision! });
+      this.saved.set(id, current.content);
+    } else {
+      this.notes = [...this.notes.filter((note) => note.id !== id), copy];
+      this.server.delete(id);
+    }
+    this.activeId = copy.id;
+    this.touched.add(id);
+    this.touched.add(copy.id);
+    this.persistSoon();
+    return copy.id;
+  }
+
   private applySaved(attempt: SaveAttempt, response: Note): void {
     if (this.discarded) return;
     this.server.set(attempt.id, {
       id: attempt.id,
       title: deriveTitle(response.content),
       updatedAt: response.updatedAt,
+      revision: response.revision,
     });
     this.saved.set(attempt.id, response.content);
 
@@ -710,7 +810,7 @@ export class CloudSession {
     if (local.deletedAt !== undefined) {
       // Deleted while the save was in flight: keep the tombstone, the delete runs after this.
       this.notes = this.notes.map((note) =>
-        note.id === attempt.id ? { ...note, baseUpdatedAt: response.updatedAt } : note,
+        note.id === attempt.id ? { ...note, baseRevision: response.revision! } : note,
       );
       return;
     }
@@ -732,7 +832,7 @@ export function createCloudSession(userId: string): CloudSession {
       read: () => readCloudCache(userId),
       write: (cache) => writeCloudCache(userId, cache),
     },
-    api: { fetchNotes, fetchNote, saveNote, deleteNote },
+    api: { fetchNotes, fetchNote, saveNote, deleteNote, restoreNote },
     isOffline: () => typeof navigator !== "undefined" && navigator.onLine === false,
     now: () => Date.now(),
     newId: createClientId,

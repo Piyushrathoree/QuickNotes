@@ -7,7 +7,7 @@ import { z } from "zod";
 import { deriveTitle, type Note, type NoteSummary } from "@/lib/types";
 import { isBlankContent } from "@/lib/store/logic";
 
-export const CLOUD_CACHE_VERSION = 1;
+export const CLOUD_CACHE_VERSION = 2;
 
 /** A note as kept in the per-user localStorage cache. */
 export interface CloudNote {
@@ -15,23 +15,25 @@ export interface CloudNote {
   content: string;
   createdAt: number;
   updatedAt: number;
-  /** Server updatedAt this edit was based on. null = never saved to the database. */
-  baseUpdatedAt: number | null;
+  /** Server revision this edit was based on. null also represents an unverified legacy base. */
+  baseRevision: number | null;
   /** Local edits that are not in the database yet. */
   dirty: boolean;
   /** Set when the note was deleted locally and the delete has not reached the database yet. */
   deletedAt?: number;
+  /** Revision returned by this tab's successful delete, required for Undo. */
+  deletedRevision?: number;
 }
 
 export interface CloudCache {
-  version: 1;
+  version: 2;
   notes: CloudNote[];
   activeId?: string;
   syncedAt?: number;
 }
 
 /** The server's view of a note, as far as merging needs it. */
-export type ServerVersions = ReadonlyMap<string, { updatedAt: number }>;
+export type ServerVersions = ReadonlyMap<string, { updatedAt: number; revision?: number }>;
 
 const timestamp = z.number().int().nonnegative();
 
@@ -40,13 +42,14 @@ const cloudNoteSchema = z.object({
   content: z.string(),
   createdAt: timestamp,
   updatedAt: timestamp,
-  baseUpdatedAt: timestamp.nullable(),
+  baseRevision: z.number().int().positive().nullable(),
   dirty: z.boolean(),
   deletedAt: timestamp.optional(),
+  deletedRevision: z.number().int().positive().optional(),
 });
 
 const cloudCacheSchema = z.object({
-  version: z.literal(CLOUD_CACHE_VERSION),
+  version: z.union([z.literal(1), z.literal(CLOUD_CACHE_VERSION)]),
   notes: z.array(z.unknown()),
   activeId: z.uuid().optional(),
   syncedAt: timestamp.optional(),
@@ -70,13 +73,19 @@ export function parseCloudCache(raw: string | null): CloudCache | null {
   const seen = new Set<string>();
   const notes: CloudNote[] = [];
   for (const item of header.data.notes) {
-    const parsed = cloudNoteSchema.safeParse(item);
+    const raw = item as Record<string, unknown> | null;
+    const compatible = header.data.version === 1 && raw && typeof raw === "object"
+      ? { ...raw, baseRevision: null, ...(raw.deletedAt !== undefined ? { deletedAt: undefined, dirty: true } : {}) }
+      : item;
+    const parsed = cloudNoteSchema.safeParse(compatible);
     if (!parsed.success || seen.has(parsed.data.id)) continue;
+    // A clean v1 cache is only a display cache; let the authoritative list/body refetch it.
+    if (header.data.version === 1 && !parsed.data.dirty && parsed.data.deletedAt === undefined) continue;
     seen.add(parsed.data.id);
     const note = parsed.data;
     notes.push({
       ...note,
-      dirty: note.baseUpdatedAt === null ? true : note.dirty,
+      dirty: note.baseRevision === null ? true : note.dirty,
     });
   }
 
@@ -89,7 +98,7 @@ export function parseCloudCache(raw: string | null): CloudCache | null {
 /** A note that has never reached the database and has no text: nothing to save or keep. */
 export function isGhostNote(note: CloudNote, activeId: string | undefined): boolean {
   return (
-    note.baseUpdatedAt === null &&
+    note.baseRevision === null &&
     isBlankContent(note.content) &&
     note.deletedAt === undefined &&
     note.id !== activeId
@@ -99,7 +108,7 @@ export function isGhostNote(note: CloudNote, activeId: string | undefined): bool
 /** True when the note has text the database does not have. Blank new notes have nothing to save. */
 export function hasUnsavedEdits(note: CloudNote): boolean {
   if (note.deletedAt !== undefined) return false;
-  if (note.baseUpdatedAt === null) return !isBlankContent(note.content);
+  if (note.baseRevision === null) return !isBlankContent(note.content);
   return note.dirty;
 }
 
@@ -145,12 +154,12 @@ export function mergeWithServer(
       continue;
     }
     if (note.deletedAt !== undefined) {
-      if (note.baseUpdatedAt !== null) out.push(note);
+      if (note.baseRevision !== null) out.push(note);
       continue;
     }
 
     const remote = server.get(note.id);
-    if (note.baseUpdatedAt === null) {
+    if (note.baseRevision === null) {
       if (!remote) {
         if (!isGhostNote(note, activeId)) out.push(note);
         continue;
@@ -161,15 +170,15 @@ export function mergeWithServer(
     }
 
     if (!note.dirty) {
-      if (remote && remote.updatedAt === note.baseUpdatedAt) out.push(note);
+      if (remote && remote.revision === note.baseRevision) out.push(note);
       continue;
     }
 
     if (!remote) {
-      out.push({ ...note, baseUpdatedAt: null });
+      out.push({ ...note, baseRevision: null });
       continue;
     }
-    if (remote.updatedAt === note.baseUpdatedAt) {
+    if (remote.revision === note.baseRevision) {
       out.push(note);
       continue;
     }
@@ -181,10 +190,10 @@ export function mergeWithServer(
 function unsavedCopy(note: CloudNote, newId: () => string): CloudNote {
   return {
     id: newId(),
-    content: conflictCopyContent(note.content),
+    content: note.content,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
-    baseUpdatedAt: null,
+    baseRevision: null,
     dirty: true,
   };
 }
@@ -192,7 +201,7 @@ function unsavedCopy(note: CloudNote, newId: () => string): CloudNote {
 export interface SaveAttempt {
   id: string;
   content: string;
-  updatedAt: number;
+  baseRevision: number | null;
 }
 
 export interface SaveReconciliation {
@@ -214,15 +223,15 @@ export function reconcileSave(
 ): SaveReconciliation {
   if (local.content === response.content) {
     return {
-      note: { ...local, baseUpdatedAt: response.updatedAt, dirty: false },
+      note: { ...local, baseRevision: response.revision!, dirty: false },
       copy: null,
     };
   }
 
-  const accepted = response.updatedAt === sent.updatedAt && response.content === sent.content;
+  const accepted = response.content === sent.content;
   if (accepted) {
     // The server took our version; the user has typed more since.
-    return { note: { ...local, baseUpdatedAt: response.updatedAt, dirty: true }, copy: null };
+    return { note: { ...local, baseRevision: response.revision!, dirty: true }, copy: null };
   }
 
   // The server kept a newer version. Take it for the original id; keep our text as a copy.
@@ -232,7 +241,7 @@ export function reconcileSave(
       content: response.content,
       createdAt: response.createdAt,
       updatedAt: response.updatedAt,
-      baseUpdatedAt: response.updatedAt,
+      baseRevision: response.revision!,
       dirty: false,
     },
     copy: {
@@ -240,7 +249,7 @@ export function reconcileSave(
       content: conflictCopyContent(local.content),
       createdAt: local.createdAt,
       updatedAt: local.updatedAt,
-      baseUpdatedAt: null,
+      baseRevision: null,
       dirty: true,
     },
   };
