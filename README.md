@@ -46,6 +46,10 @@ Enable **Web Analytics** in the project's Vercel dashboard, then deploy. Quick N
 
 For Google indexing, verify the domain in [Google Search Console](https://search.google.com/search-console), submit the production `/sitemap.xml`, and use URL Inspection to request indexing of the homepage, `/about`, and `/compare`.
 
+## Android beta
+
+The Expo app lives in [apps/mobile](apps/mobile/README.md) and uses the same account and notes APIs as the website. Its Android build runs separately. Apply the note revision migration before deploying the updated web and API code, then verify login and save against an isolated staging instance before distributing a signed APK.
+
 ## MCP server
 
 Quick Notes exposes a stateless MCP Streamable HTTP endpoint at /api/mcp. Sign in, open the account menu, choose **Connect AI**, then create a read-only or read-and-write personal access token at /connect. The full token is shown once; copy it into your client configuration. Use the endpoint URL shown on /mcp or /connect.
