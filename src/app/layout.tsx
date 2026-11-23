@@ -1,55 +1,63 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Serif, Patrick_Hand } from "next/font/google";
+import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import { AppToaster } from "@/components/AppToaster";
 import { WebAnalytics } from "@/components/WebAnalytics";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-// UI chrome uses Geist; code and monospaced writing use Geist Mono. Other writing faces follow the saved font preference.
-// The app only loads the weight ranges used in the editor, and self-hosts each font in the build.
-const geist = Geist({
+// Bundle these faces with the repo so a production build needs no font downloads.
+const geist = localFont({
+  src: "../../assets/fonts/geist/Geist.woff2",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  weight: "100 900",
   display: "swap",
 });
-
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../../assets/fonts/geistmono/GeistMono.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: "100 900",
   display: "swap",
+  preload: false,
 });
-
-const patrickHand = Patrick_Hand({
+const patrickHand = localFont({
+  src: "../../assets/fonts/patrickhand/PatrickHand-Regular.woff2",
   variable: "--font-patrick-hand",
-  subsets: ["latin"],
   weight: "400",
   display: "swap",
 });
-
-const plexMono = IBM_Plex_Mono({
+const plexMono = localFont({
+  src: [
+    { path: "../../assets/fonts/ibmplexmono/IBMPlexMono-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../../assets/fonts/ibmplexmono/IBMPlexMono-Italic.woff2", weight: "400", style: "italic" },
+    { path: "../../assets/fonts/ibmplexmono/IBMPlexMono-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../../assets/fonts/ibmplexmono/IBMPlexMono-MediumItalic.woff2", weight: "500", style: "italic" },
+  ],
   variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal", "italic"],
   display: "swap",
+  preload: false,
 });
-
-const plexSans = IBM_Plex_Sans({
+const plexSans = localFont({
+  src: [
+    { path: "../../assets/fonts/ibmplexsans/IBMPlexSans.woff2", weight: "100 700", style: "normal" },
+    { path: "../../assets/fonts/ibmplexsans/IBMPlexSans-Italic.woff2", weight: "100 700", style: "italic" },
+  ],
   variable: "--font-plex-sans",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  style: ["normal", "italic"],
   display: "swap",
+  preload: false,
 });
-
-const plexSerif = IBM_Plex_Serif({
+const plexSerif = localFont({
+  src: [
+    { path: "../../assets/fonts/ibmplexserif/IBMPlexSerif-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../../assets/fonts/ibmplexserif/IBMPlexSerif-Italic.woff2", weight: "400", style: "italic" },
+    { path: "../../assets/fonts/ibmplexserif/IBMPlexSerif-SemiBold.woff2", weight: "600", style: "normal" },
+    { path: "../../assets/fonts/ibmplexserif/IBMPlexSerif-SemiBoldItalic.woff2", weight: "600", style: "italic" },
+    { path: "../../assets/fonts/ibmplexserif/IBMPlexSerif-Bold.woff2", weight: "700", style: "normal" },
+    { path: "../../assets/fonts/ibmplexserif/IBMPlexSerif-BoldItalic.woff2", weight: "700", style: "italic" },
+  ],
   variable: "--font-plex-serif",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-  style: ["normal", "italic"],
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
