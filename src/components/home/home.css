@@ -1053,45 +1053,6 @@ html.lenis body {
   font-size: 0.875rem;
 }
 
-/* ---------------- Footer ---------------- */
-
-.lx-footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px 32px;
-  margin: 0 var(--pad-x);
-  padding: 28px 0 40px;
-  border-top: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 0.875rem;
-}
-
-.lx-footer p {
-  margin: 0;
-}
-
-.lx-footer nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-}
-
-.lx-footer a {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  text-decoration: none;
-}
-
-.lx-footer a:hover {
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
 /* ---------------- Narrow screens: same scenes, stacked ---------------- */
 
 @media (max-width: 899px) {

@@ -8,13 +8,14 @@ import { SplitText } from "gsap/SplitText";
 import { TextPlugin } from "gsap/TextPlugin";
 import { useGSAP } from "@gsap/react";
 import Lenis from "lenis";
-import { AndroidIcon, Download04Icon, GithubIcon } from "@hugeicons/core-free-icons";
+import { AndroidIcon, Download04Icon } from "@hugeicons/core-free-icons";
 
 import { LogoMark } from "@/components/brand/LogoMark";
 import { AppMock } from "@/components/home/AppMock";
 import { GetAppButton } from "@/components/home/GetAppButton";
 import { PhoneMock } from "@/components/home/PhoneMock";
 import { TryPad } from "@/components/home/TryPad";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { Icon } from "@/components/Icon";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, TextPlugin, useGSAP);
@@ -22,7 +23,6 @@ gsap.registerPlugin(ScrollTrigger, SplitText, TextPlugin, useGSAP);
 interface LandingProps {
   apkUrl: string | null;
   mcpUrl: string;
-  repoUrl: string;
 }
 
 /** The note that types itself in the pinned scene: raw Markdown, then what the notepad shows. */
@@ -52,7 +52,7 @@ const fonts = [
   { name: "Mono", family: "var(--font-plex-mono)" },
 ];
 
-export function Landing({ apkUrl, mcpUrl, repoUrl }: LandingProps) {
+export function Landing({ apkUrl, mcpUrl }: LandingProps) {
   const root = useRef<HTMLDivElement>(null);
 
   useGSAP(
@@ -713,18 +713,7 @@ export function Landing({ apkUrl, mcpUrl, repoUrl }: LandingProps) {
         </section>
       </main>
 
-      <footer className="lx-footer">
-        <p>Quick Notes is free and open source under the MIT license.</p>
-        <nav aria-label="Footer">
-          <Link href="/about">How it works</Link>
-          <Link href="/compare">Compare</Link>
-          <Link href="/mcp">AI access</Link>
-          <a href={repoUrl}>
-            <Icon icon={GithubIcon} />
-            Source code
-          </a>
-        </nav>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

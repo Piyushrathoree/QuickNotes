@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { JsonLd } from "@/components/seo/JsonLd";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { faqs } from "@/lib/faq";
 import { site } from "@/lib/site";
 import { aboutStructuredData } from "@/lib/structuredData";
@@ -145,7 +146,7 @@ export default function AboutPage() {
           </table>
         </div>
 
-        <h2 className={h2}>Keyboard shortcuts</h2>
+        <h2 id="shortcuts" className={h2}>Keyboard shortcuts</h2>
         <div className="mt-4 overflow-x-auto rounded-xl border border-border bg-pad">
           <table className="w-full border-collapse">
             <thead>
@@ -215,6 +216,7 @@ export default function AboutPage() {
           </Link>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

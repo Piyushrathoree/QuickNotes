@@ -1,3 +1,4 @@
+import { compareChecked, comparisons, type Comparison } from "@/lib/compare";
 import { absoluteUrl, site } from "@/lib/site";
 
 const websiteId = absoluteUrl("/#website");
@@ -126,6 +127,79 @@ export function aboutStructuredData(faqs: readonly Faq[]) {
           name: faq.question,
           acceptedAnswer: { "@type": "Answer", text: faq.answer },
         })),
+      },
+    ],
+  };
+}
+
+/** One comparison page: the page, its breadcrumb and the visible FAQ (the text must match what is on the page). */
+export function compareStructuredData(comparison: Comparison) {
+  const pageUrl = absoluteUrl(`/compare/${comparison.slug}`);
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#page`,
+        url: pageUrl,
+        name: `Quick Notes vs ${comparison.name}`,
+        description: comparison.description,
+        inLanguage: site.language,
+        dateModified: compareChecked,
+        isPartOf: { "@id": websiteId },
+        about: { "@id": appId },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: site.name, item: absoluteUrl("/") },
+          { "@type": "ListItem", position: 2, name: "Compare", item: absoluteUrl("/compare") },
+          { "@type": "ListItem", position: 3, name: comparison.name, item: pageUrl },
+        ],
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${pageUrl}#faq`,
+        mainEntity: comparison.faq.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+      },
+    ],
+  };
+}
+
+/** The comparison hub: the page, its breadcrumb and a list of every comparison. */
+export function compareHubStructuredData() {
+  const pageUrl = absoluteUrl("/compare");
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": `${pageUrl}#page`,
+        url: pageUrl,
+        name: "How Quick Notes compares",
+        inLanguage: site.language,
+        dateModified: compareChecked,
+        isPartOf: { "@id": websiteId },
+        mainEntity: {
+          "@type": "ItemList",
+          itemListElement: comparisons.map((comparison, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: `Quick Notes vs ${comparison.name}`,
+            url: absoluteUrl(`/compare/${comparison.slug}`),
+          })),
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: site.name, item: absoluteUrl("/") },
+          { "@type": "ListItem", position: 2, name: "Compare", item: pageUrl },
+        ],
       },
     ],
   };

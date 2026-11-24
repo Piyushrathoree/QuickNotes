@@ -1,4 +1,5 @@
 import { faqs } from "@/lib/faq";
+import { comparisons } from "@/lib/compare";
 import { absoluteUrl, site } from "@/lib/site";
 
 // llms.txt (https://llmstxt.org): a plain Markdown summary that answer engines and AI assistants can read directly.
@@ -18,6 +19,14 @@ export function GET() {
     `- [Notepad](${absoluteUrl("/write")}): open it and start typing; no sign-up needed.`,
     `- [About, Markdown shortcuts and FAQ](${absoluteUrl("/about")}): how Quick Notes works, what Markdown it supports, keyboard shortcuts and answers to common questions.`,
     `- [Sign in or create an account](${absoluteUrl("/login")}): optional, to sync notes across devices.`,
+    "",
+    "## Comparisons",
+    "",
+    `- [All comparisons](${absoluteUrl("/compare")}): how Quick Notes compares with other note apps, using what each product says about itself.`,
+    ...comparisons.map(
+      (comparison) =>
+        `- [Quick Notes vs ${comparison.name}](${absoluteUrl(`/compare/${comparison.slug}`)}): ${comparison.best}.`,
+    ),
     "",
     "## MCP server",
     "",

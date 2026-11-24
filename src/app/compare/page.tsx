@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-const title = "Quick Notes vs. Notes.io, QuickNote.io, Notion & Obsidian";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { compareChecked, comparisons } from "@/lib/compare";
+import { compareHubStructuredData } from "@/lib/structuredData";
+import "./compare.css";
+
+const title = "Quick Notes vs Notion, Obsidian, Google Keep and More";
 const description =
-  "Compare Quick Notes with Notes.io, QuickNote.io, Notion, and Obsidian for browser notes, link sharing, Markdown drafts, and organized knowledge bases.";
+  "How Quick Notes compares with Notion, Obsidian, Google Keep, Apple Notes, Simplenote, Evernote, Notes.io and QuickNote.io, using what each product says about itself.";
 
 export const metadata: Metadata = {
   title: { absolute: title },
@@ -13,94 +20,106 @@ export const metadata: Metadata = {
   twitter: { title, description },
 };
 
-const comparisons = [
-  {
-    id: "notes-io",
-    name: "Notes.io",
-    useCase: "Share a note with a short link",
-    competitor: "Notes.io lets you write a note in your browser and share it with a short URL without creating an account. It suits one-off notes you want to send in a message or email.",
-    quickNotes: "Quick Notes saves guest drafts in your browser as you type and lets you download them as Markdown or plain text. To share a view-only link, sign in, save the note, and turn on sharing. You can turn the link off later.",
-    source: "https://notes.io/etN",
-  },
-  {
-    id: "quicknote-io",
-    name: "QuickNote.io",
-    useCase: "Share formatted notes without signing up",
-    competitor: "QuickNote.io supports links, images, lists, and code snippets in notes you can share without signing up. Its My Notes page offers a backup code for transferring notes to another device.",
-    quickNotes: "Quick Notes works well when you want Markdown to format as you type and want a downloadable .md or .txt file. Guest drafts stay in the browser. With a free account, you can save a note to the cloud and open it on another device.",
-    source: "https://quicknote.io/about",
-    extraSource: "https://quicknote.io/mynotes",
-  },
-  {
-    id: "notion",
-    name: "Notion",
-    useCase: "Organize projects and related pages",
-    competitor: "Notion is a good fit when your notes belong in a workspace with pages and databases. A project database can give each task its own page and let you see the same tasks in a table, board, or calendar.",
-    quickNotes: "Quick Notes is a lightweight Notion alternative for personal scratch notes, meeting drafts, and simple checklists. You can write and export a note without signing in. To share a view-only link, save the note to your account first.",
-    source: "https://www.notion.com/help/intro-to-databases",
-  },
-  {
-    id: "obsidian",
-    name: "Obsidian",
-    useCase: "Build a linked Markdown knowledge base",
-    competitor: "Obsidian stores notes on your device and can link them together in a vault. Backlinks, a graph view, and plugins make it a good fit for ongoing research and a personal knowledge base you can access offline.",
-    quickNotes: "Quick Notes is a browser-based Obsidian alternative for quick Markdown capture. You can write a draft or checklist without installing an app, then download the Markdown file and move it into your Obsidian vault whenever you’re ready.",
-    source: "https://obsidian.md/",
-  },
-] as const;
+const prettyDate = new Date(`${compareChecked}T00:00:00Z`).toLocaleDateString("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
-const linkClass = "font-medium text-brand underline-offset-4 hover:underline";
-const buttonClass = "inline-flex min-h-9 items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const jobs: { job: string; pick: string; slug?: string }[] = [
+  { job: "Write a note right now, no setup", pick: "Quick Notes" },
+  { job: "Run projects and wikis with linked pages", pick: "Notion", slug: "notion" },
+  { job: "Build a knowledge base on your own files", pick: "Obsidian", slug: "obsidian" },
+  { job: "Keep reminders, photos and voice notes", pick: "Google Keep", slug: "google-keep" },
+];
 
 export default function ComparePage() {
   return (
     <div className="min-h-dvh bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="mx-auto flex min-h-14 max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/" className="text-[15px] font-semibold tracking-tight hover:underline">Quick Notes</Link>
-          <Link href="/write" className={buttonClass}>Start writing</Link>
-        </div>
-      </header>
+      <JsonLd data={compareHubStructuredData()} />
+      <SiteHeader />
 
-      <main className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:px-6">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
-        <p className="mt-4 text-[17px] leading-8 text-secondary-foreground">
-          Need a browser scratchpad, a quick way to share a note, or a place to organize a project? Here’s how Quick Notes
-          compares for each job. You can start writing in Quick Notes for free without signing up.
+      <main className="mx-auto max-w-5xl px-4 pb-24 pt-10 sm:px-6 sm:pt-14">
+        <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
+          <ol className="flex gap-1.5">
+            <li>
+              <Link href="/" className="hover:text-foreground hover:underline">
+                Quick Notes
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page" className="text-secondary-foreground">
+              Compare
+            </li>
+          </ol>
+        </nav>
+
+        <h1 className="cmp-serif mt-6 max-w-3xl text-4xl leading-[1.08] sm:text-5xl">How Quick Notes compares</h1>
+        <p className="mt-5 max-w-2xl text-[17px] leading-8 text-secondary-foreground">
+          The right note app depends on the job. Here is how Quick Notes lines up against eight others, using only what each
+          product says about itself. We say when they&apos;re the better choice, too.
         </p>
 
-        <nav aria-label="Jump to a comparison" className="mt-7 rounded-xl border border-border bg-pad">
-          <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-xl bg-border sm:grid-cols-2">
-            {comparisons.map(({ id, name, useCase }) => (
-              <li key={id} className="bg-pad">
-                <a href={`#${id}`} className="block px-4 py-3 hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring">
-                  <span className="block text-sm font-semibold">{name}</span>
-                  <span className="block text-sm leading-6 text-muted-foreground">{useCase}</span>
-                </a>
+        <section aria-labelledby="jobs-heading" className="mt-12">
+          <h2 id="jobs-heading" className="cmp-serif text-2xl sm:text-3xl">
+            Start with the job
+          </h2>
+          <ul className="mt-6 grid gap-px overflow-hidden rounded-[14px] border border-border bg-border sm:grid-cols-2">
+            {jobs.map(({ job, pick, slug }) => (
+              <li key={job} className="bg-pad">
+                {slug ? (
+                  <Link
+                    href={`/compare/${slug}`}
+                    className="block px-5 py-4 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                  >
+                    <span className="block text-[15px] leading-6">{job}</span>
+                    <span className="mt-1 block text-sm font-semibold">{pick}</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/write"
+                    className="block px-5 py-4 transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+                  >
+                    <span className="block text-[15px] leading-6">{job}</span>
+                    <span className="mt-1 block text-sm font-semibold">{pick}</span>
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
-        </nav>
+        </section>
 
-        {comparisons.map((comparison) => (
-          <section key={comparison.id} id={comparison.id} className="mt-9 scroll-mt-6 border-b border-border pb-7">
-            <h2 className="text-xl font-semibold tracking-tight">Quick Notes vs. {comparison.name}</h2>
-            <p className="mt-3 text-[15px] leading-7 text-secondary-foreground">{comparison.competitor}</p>
-            <p className="mt-2 text-[15px] leading-7 text-secondary-foreground">{comparison.quickNotes}</p>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <a href={comparison.source} className={linkClass}>About {comparison.name}</a>
-              {"extraSource" in comparison && (
-                <a href={comparison.extraSource} className={linkClass}>QuickNote.io device transfer</a>
-              )}
-            </div>
-          </section>
-        ))}
+        <section aria-labelledby="all-heading" className="mt-14">
+          <h2 id="all-heading" className="cmp-serif text-2xl sm:text-3xl">
+            All comparisons
+          </h2>
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+            {comparisons.map((comparison) => (
+              <li key={comparison.slug}>
+                <Link href={`/compare/${comparison.slug}`} className="cmp-card">
+                  <span className="cmp-serif text-xl">Quick Notes vs {comparison.name}</span>
+                  <span className="text-sm leading-6 text-secondary-foreground">
+                    {comparison.name} is best for: {comparison.best.charAt(0).toLowerCase() + comparison.best.slice(1)}.
+                  </span>
+                  <span className="mt-auto pt-2 text-sm font-medium text-brand">Read the comparison</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          <Link href="/write" className={buttonClass}>Try Quick Notes</Link>
-          <Link href="/about" className={`${linkClass} text-sm`}>Read the Quick Notes guide</Link>
-        </div>
+        <section className="mt-14 max-w-2xl">
+          <h2 className="text-base font-semibold">How we compare</h2>
+          <p className="mt-2 text-[15px] leading-7 text-secondary-foreground">
+            Everything we say about another product comes from that product&apos;s own pages, which every comparison lists as
+            sources. We last checked them on {prettyDate}. When a product&apos;s pages don&apos;t say something, we leave it out
+            instead of guessing. Products change, so check their sites for the latest.
+          </p>
+        </section>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

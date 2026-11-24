@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { JsonLd } from "@/components/seo/JsonLd";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { mcpFaqs } from "@/lib/faq";
 import { absoluteUrl, site } from "@/lib/site";
 import { mcpStructuredData } from "@/lib/structuredData";
@@ -341,6 +342,7 @@ export default function McpPage() {
           </Link>
         </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }

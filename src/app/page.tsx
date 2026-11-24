@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Landing } from "@/components/home/Landing";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { absoluteUrl, site } from "@/lib/site";
+import { absoluteUrl } from "@/lib/site";
 import { homeStructuredData } from "@/lib/structuredData";
 import "@/components/home/home.css";
 
@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <>
       <JsonLd data={homeStructuredData()} />
-      <Landing apkUrl={androidDownload()} mcpUrl={absoluteUrl("/api/mcp")} repoUrl={site.repo} />
+      <Landing apkUrl={androidDownload()} mcpUrl={absoluteUrl("/api/mcp")} />
     </>
   );
 }
