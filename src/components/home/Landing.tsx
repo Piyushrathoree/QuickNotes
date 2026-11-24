@@ -635,40 +635,64 @@ export function Landing({ apkUrl, mcpUrl, repoUrl }: LandingProps) {
         <section className="lx-phone-scene" id="android" aria-labelledby="lx-android-title" tabIndex={-1}>
           <div className="lx-phone-copy">
             <h2 id="lx-android-title">The same page, in your pocket.</h2>
-            <p>
-              Quick Notes for Android has the same ruled paper and fonts. It works offline, and your notes sync when you
-              sign in.
-            </p>
-            <GetAppButton apkUrl={apkUrl} className="lx-btn lx-btn-solid lx-btn-big">
-              <Icon icon={apkUrl ? Download04Icon : AndroidIcon} />
-              {apkUrl ? "Download for Android" : "Get the app"}
-            </GetAppButton>
+            <p>Quick Notes for Android keeps the ruled paper, the fonts and the way you write.</p>
+            <ul className="lx-phone-points">
+              <li>
+                <b>Works offline.</b> Write on the train. Notes save on the phone first.
+              </li>
+              <li>
+                <b>Syncs when you sign in.</b> Your notes follow you to the web and back.
+              </li>
+              <li>
+                <b>Export anywhere.</b> Share a note as Markdown or plain text.
+              </li>
+            </ul>
+            <div className="lx-phone-cta">
+              <GetAppButton apkUrl={apkUrl} className="lx-btn lx-btn-solid lx-btn-big">
+                <Icon icon={apkUrl ? Download04Icon : AndroidIcon} />
+                {apkUrl ? "Download for Android" : "Get the app"}
+              </GetAppButton>
+              <span className="lx-phone-meta">Free · Android 7 and up · Open source</span>
+            </div>
           </div>
           <div className="lx-phone-stage">
-            <PhoneMock />
+            <div className="lx-stage-panel" aria-hidden="true" />
+            <PhoneMock variant="library" className="lx-device-back" />
+            <PhoneMock className="lx-device-front" />
           </div>
         </section>
 
         {/* ---------------- Ending ---------------- */}
         <section className="lx-end" aria-labelledby="lx-end-title">
-          <h2 className="lx-end-title" id="lx-end-title">
-            <span className="lx-end-word" data-text="Start">
-              Start
-              <span className="lx-end-fill" aria-hidden="true">
-                Start
-              </span>
-            </span>
-            <span className="lx-end-word" data-text="writing.">
-              writing.
-              <span className="lx-end-fill" aria-hidden="true">
-                writing.
-              </span>
-            </span>
-          </h2>
-          <TryPad />
-          <Link href="/write" className="lx-btn lx-btn-solid lx-btn-huge">
-            Open the notepad
-          </Link>
+          <div className="lx-end-grid">
+            <div className="lx-end-left">
+              <h2 className="lx-end-title" id="lx-end-title">
+                <span className="lx-end-word" data-text="Start">
+                  Start
+                  <span className="lx-end-fill" aria-hidden="true">
+                    Start
+                  </span>
+                </span>
+                <span className="lx-end-word" data-text="writing.">
+                  writing.
+                  <span className="lx-end-fill" aria-hidden="true">
+                    writing.
+                  </span>
+                </span>
+              </h2>
+              <p className="lx-end-sub">
+                Your first note is one click away. No account, no install. Sign in later to keep it on every device.
+              </p>
+              <Link href="/write" className="lx-btn lx-btn-solid lx-btn-huge">
+                Open the notepad
+              </Link>
+            </div>
+            <div className="lx-end-right">
+              <span className="lx-end-sheet lx-end-sheet-2" aria-hidden="true" />
+              <span className="lx-end-sheet lx-end-sheet-1" aria-hidden="true" />
+              <TryPad />
+            </div>
+          </div>
         </section>
       </main>
 

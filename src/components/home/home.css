@@ -55,6 +55,9 @@ html.lenis body {
   --hand: var(--font-patrick-hand), cursive;
   --mono: var(--font-geist-mono), ui-monospace, monospace;
   --gutter: clamp(16px, 4vw, 56px);
+  /* Content never grows past this width. On wide screens the page gains side margins instead. */
+  --content: 1240px;
+  --pad-x: max(var(--gutter), calc((100vw - var(--content)) / 2));
   --ink: var(--text);
   --paper: var(--canvas);
   --ink-raise: color-mix(in srgb, var(--paper) 7%, var(--ink));
@@ -251,7 +254,7 @@ html.lenis body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px var(--gutter);
+  padding: 12px var(--pad-x);
   color: var(--ink);
   background: color-mix(in srgb, var(--paper) 78%, transparent);
   border-bottom: 1px solid var(--border);
@@ -307,7 +310,7 @@ html.lenis body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: clamp(120px, 18vh, 180px) var(--gutter) 0;
+  padding: clamp(120px, 18vh, 180px) var(--pad-x) 0;
   overflow: hidden;
 }
 
@@ -465,7 +468,7 @@ html.lenis body {
   display: grid;
   place-items: center;
   min-height: 100svh;
-  padding: 96px var(--gutter);
+  padding: 96px var(--pad-x);
 }
 
 .lx-type-inner {
@@ -473,7 +476,7 @@ html.lenis body {
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
   gap: clamp(32px, 6vw, 96px);
   align-items: center;
-  width: min(1280px, 100%);
+  width: 100%;
 }
 
 .lx-type-title {
@@ -622,7 +625,7 @@ html.lenis body {
   gap: clamp(24px, 4vw, 64px);
   width: max-content;
   height: 100svh;
-  padding: 0 clamp(24px, 6vw, 96px);
+  padding: 0 max(clamp(24px, 6vw, 96px), var(--pad-x));
   will-change: transform;
 }
 
@@ -934,7 +937,7 @@ html.lenis body {
   gap: clamp(32px, 6vw, 96px);
   align-items: center;
   min-height: 100svh;
-  padding: 96px var(--gutter);
+  padding: 96px var(--pad-x);
 }
 
 .lx-phone-copy h2 {
@@ -972,7 +975,7 @@ html.lenis body {
   flex-direction: column;
   align-items: flex-start;
   gap: clamp(36px, 6vh, 64px);
-  padding: clamp(96px, 18vh, 200px) var(--gutter) clamp(72px, 12vh, 140px);
+  padding: clamp(96px, 18vh, 200px) var(--pad-x) clamp(72px, 12vh, 140px);
 }
 
 .lx-end-title {
@@ -1058,7 +1061,7 @@ html.lenis body {
   align-items: center;
   justify-content: space-between;
   gap: 16px 32px;
-  margin: 0 var(--gutter);
+  margin: 0 var(--pad-x);
   padding: 28px 0 40px;
   border-top: 1px solid var(--border);
   color: var(--text-muted);
@@ -1117,7 +1120,7 @@ html.lenis body {
     flex-direction: column;
     width: auto;
     height: auto;
-    padding: 72px var(--gutter);
+    padding: 72px var(--pad-x);
   }
 
   .lx-panel,
@@ -1158,7 +1161,7 @@ html:not(.lx-motion) .lx-strip-track {
   flex-direction: column;
   width: auto;
   height: auto;
-  padding: 96px var(--gutter);
+  padding: 96px var(--pad-x);
 }
 
 html:not(.lx-motion) .lx-panel {
@@ -1888,4 +1891,317 @@ button.lx-nav-link {
   border-radius: 999px;
   color: var(--text-muted);
   font-size: 0.75rem;
+}
+
+/* ---------------- Phone section: two phones on a panel ---------------- */
+
+.lx-phone-scene {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: clamp(32px, 5vw, 80px);
+}
+
+.lx-phone-copy h2 {
+  font-size: clamp(2.4rem, 4.4vw, 4.2rem);
+}
+
+.lx-phone-copy > p {
+  margin-bottom: 22px;
+}
+
+.lx-phone-points {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.lx-phone-points li {
+  position: relative;
+  max-width: 44ch;
+  padding-left: 30px;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.lx-phone-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.32em;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--accent);
+}
+
+.lx-phone-points li::after {
+  content: "";
+  position: absolute;
+  left: 5.5px;
+  top: calc(0.32em + 2px);
+  width: 4px;
+  height: 8px;
+  border: solid var(--on-accent);
+  border-width: 0 2px 2px 0;
+  rotate: 45deg;
+}
+
+.lx-phone-points b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.lx-phone-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+}
+
+.lx-phone-meta {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.lx-phone-stage {
+  position: relative;
+  height: clamp(520px, 46vw, 620px);
+  overflow: hidden;
+  border-radius: 28px;
+  perspective: 1600px;
+}
+
+/* A soft ruled panel the phones sit on, cropped at the bottom so they look as if they're rising out of it. */
+.lx-stage-panel {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background-color: var(--sidebar);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 39px, var(--rule) 39px 40px);
+  background-position: 0 20px;
+}
+
+.lx-stage-panel::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 12%;
+  width: 1.5px;
+  background: var(--margin-ink);
+  opacity: 0.55;
+}
+
+.lx-device-front,
+.lx-device-back {
+  position: absolute;
+}
+
+.lx-device-front {
+  top: 56px;
+  left: calc(50% - 40px);
+  z-index: 2;
+}
+
+.lx-device-back {
+  top: 110px;
+  left: calc(50% - 292px);
+  z-index: 1;
+  scale: 0.9;
+  transform-origin: 50% 0;
+}
+
+.lx-lib {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 10px 0;
+  padding: 12px 10px 10px;
+  border: 1px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  background: var(--sidebar);
+  font-size: 0.9rem;
+}
+
+.lx-lib p {
+  margin: 0;
+}
+
+.lx-lib-new {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--accent-soft-hover);
+  font-weight: 500;
+}
+
+.lx-lib-label {
+  padding: 16px 12px 6px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.lx-lib-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.lx-lib-row svg {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.lx-lib-row.is-active {
+  background: var(--selected);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.lx-lib-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto !important;
+  padding: 12px 6px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.lx-lib-user small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
+.lx-lib-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--selected);
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+}
+
+/* ---------------- Ending: headline and the pad, side by side ---------------- */
+
+.lx-end {
+  display: block;
+}
+
+.lx-end-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: clamp(36px, 6vw, 96px);
+  align-items: center;
+}
+
+.lx-end-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+.lx-end-title {
+  font-size: clamp(3.4rem, 8.4vw, 8.5rem);
+}
+
+.lx-end-sub {
+  max-width: 36ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+.lx-end-right {
+  position: relative;
+  padding: 18px 12px 26px;
+}
+
+.lx-end-sheet {
+  position: absolute;
+  inset: 18px 12px 26px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--pad);
+  box-shadow: var(--elev-xs);
+}
+
+.lx-end-sheet-2 {
+  rotate: -3deg;
+  translate: -12px 10px;
+  background: color-mix(in srgb, var(--pad) 90%, var(--ink));
+}
+
+.lx-end-sheet-1 {
+  rotate: 2deg;
+  translate: 10px 5px;
+  background: color-mix(in srgb, var(--pad) 95%, var(--ink));
+}
+
+.lx-end-right .lx-try {
+  position: relative;
+  width: 100%;
+  box-shadow: var(--elev-pad), 0 28px 50px -30px rgb(20 20 19 / 0.3);
+}
+
+.lx-end-right .lx-try-field {
+  min-height: calc(44px * 4 + 16px);
+}
+
+@media (max-width: 899px) {
+  .lx-phone-scene {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lx-phone-stage {
+    height: 560px;
+  }
+
+  .lx-device-back {
+    display: none;
+  }
+
+  .lx-device-front {
+    left: 50%;
+    margin-left: -136px;
+    top: 44px;
+  }
+
+  .lx-end-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lx-end-title {
+    font-size: clamp(3.4rem, 17vw, 6.5rem);
+  }
+}
+
+/* Sections size to their content, so the page has no large empty stretches between them. */
+.lx-phone-scene {
+  min-height: auto;
+  padding-block: clamp(72px, 9vw, 120px);
+}
+
+.lx-end {
+  padding-top: clamp(40px, 6vw, 88px);
 }

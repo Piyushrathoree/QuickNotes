@@ -1,14 +1,15 @@
 import { LogoMark } from "@/components/brand/LogoMark";
 
 const groceries = ["oat milk", "eggs", "basil", "lemons", "something sweet"];
+const libraryNotes = ["Groceries", "Weekend in Lisbon", "Ideas from the call", "Books to read", "Guitar riffs", "Gift ideas", "Trip plan"];
 
 /**
  * An Android phone running Quick Notes: punch-hole camera, side buttons, status bar, app bar, a ruled checklist,
  * the formatting toolbar and the gesture bar. Landing.tsx ticks the items (.lx-mtask.is-done) as the page scrolls.
  */
-export function PhoneMock() {
+export function PhoneMock({ variant = "editor", className = "" }: { variant?: "editor" | "library"; className?: string }) {
   return (
-    <div className="lx-device" aria-hidden="true">
+    <div className={`lx-device ${className}`.trim()} aria-hidden="true">
       <span className="lx-device-key lx-device-power" />
       <span className="lx-device-key lx-device-volume" />
       <div className="lx-device-screen">
@@ -43,6 +44,29 @@ export function PhoneMock() {
           </svg>
         </div>
 
+        {variant === "library" ? (
+          <div className="lx-lib">
+            <p className="lx-lib-new">
+              <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M11.5 4.5l4 4M4 16l.8-3.6L13 4.2a1.6 1.6 0 0 1 2.3 0l.5.5a1.6 1.6 0 0 1 0 2.3L7.6 15.2 4 16z" strokeLinejoin="round" />
+              </svg>
+              New note
+            </p>
+            <p className="lx-lib-label">Recents</p>
+            {libraryNotes.map((title, index) => (
+              <p key={title} className={`lx-lib-row${index === 0 ? " is-active" : ""}`}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.55" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9m-6-6 6 6h-6V3M8 13h8m-8 4h6" />
+                </svg>
+                {title}
+              </p>
+            ))}
+            <p className="lx-lib-user">
+              <span className="lx-lib-avatar">P</span>
+              <span>Priya<small>All notes saved</small></span>
+            </p>
+          </div>
+        ) : (
         <div className="lx-mnote">
           <p className="lx-mnote-meta">Saved · Today, 9:38</p>
           <p className="lx-mnote-title">Groceries</p>
@@ -56,7 +80,9 @@ export function PhoneMock() {
             for Sunday: <b>lasagne</b>
           </p>
         </div>
+        )}
 
+        {variant === "editor" && (
         <div className="lx-toolbar">
           <b>B</b>
           <i>I</i>
@@ -75,6 +101,7 @@ export function PhoneMock() {
             <path d="M7.5 6.5L4 10l3.5 3.5M12.5 6.5L16 10l-3.5 3.5" />
           </svg>
         </div>
+        )}
         <span className="lx-gesture" />
       </div>
     </div>
