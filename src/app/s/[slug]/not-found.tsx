@@ -11,7 +11,7 @@ export default function SharedNoteNotFound() {
           <LogoMark size={30} />
           <span>Quick Notes</span>
         </Link>
-        <Link className="shared-note-open-link" href="/">
+        <Link className="shared-note-open-link" href="/write">
           Open Quick Notes
           <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
         </Link>
@@ -21,7 +21,7 @@ export default function SharedNoteNotFound() {
         <section className="shared-note-paper shared-note-not-found">
           <h1>This note isn’t shared anymore</h1>
           <p>The link may have been turned off, or the note may have been deleted.</p>
-          <Link className="shared-note-open-link" href="/">
+          <Link className="shared-note-open-link" href="/write">
             Go to Quick Notes
             <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
           </Link>

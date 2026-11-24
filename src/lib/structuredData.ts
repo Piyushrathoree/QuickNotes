@@ -30,7 +30,7 @@ export function homeStructuredData() {
         "@type": "WebApplication",
         "@id": appId,
         name: site.name,
-        url: absoluteUrl("/"),
+        url: absoluteUrl("/write"),
         description: site.summary,
         applicationCategory: "ProductivityApplication",
         applicationSubCategory: "Note-taking",

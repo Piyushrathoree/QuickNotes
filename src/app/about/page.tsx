@@ -59,7 +59,7 @@ export default function AboutPage() {
             {site.name}
           </Link>
           <Link
-            href="/"
+            href="/write"
             className="inline-flex h-9 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground outline-none transition-colors duration-150 hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring"
           >
             Open the notepad
@@ -93,7 +93,7 @@ export default function AboutPage() {
         <h2 className={h2}>Write a quick note without signing up</h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-[15px] leading-7 text-secondary-foreground">
           <li>
-            <Link href="/" className="font-medium text-brand underline-offset-4 hover:underline">
+            <Link href="/write" className="font-medium text-brand underline-offset-4 hover:underline">
               Open Quick Notes
             </Link>{" "}
             and type a title or start writing in the body.
@@ -208,7 +208,7 @@ export default function AboutPage() {
 
         <div className="mt-12">
           <Link
-            href="/"
+            href="/write"
             className="inline-flex h-11 items-center rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground outline-none transition-colors duration-150 hover:bg-primary/90 focus-visible:ring-[3px] focus-visible:ring-ring"
           >
             Start writing — it&apos;s free

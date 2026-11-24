@@ -24,7 +24,7 @@ export const site = {
     "Write quick notes and checklists in your browser with live Markdown. No sign-up needed. Drafts auto-save locally. Export to Markdown or plain text.",
   /** Longer plain-language summary for JSON-LD, the About page and llms.txt. */
   summary:
-    "Quick Notes is a free, open-source online notepad. Open the page and start typing — no sign-up needed. Notes save automatically in your browser, Markdown formats as you type (bullets, numbered lists, checklists, headings, horizontal rules and code blocks with syntax highlighting), and any note can be downloaded as a Markdown (.md) or plain text (.txt) file. Create a free account with an email and password, then press Save to keep your notes in the cloud and open them on any device. Signed-in users can connect MCP-compatible AI assistants to their cloud notes with personal access tokens; OAuth sign-in is planned.",
+    "Quick Notes is a free, open-source online notepad. Open the notepad and start typing without signing up. Notes save automatically in your browser, Markdown formats as you type (bullets, numbered lists, checklists, headings, horizontal rules and code blocks with syntax highlighting), and any note can be downloaded as a Markdown (.md) or plain text (.txt) file. Create a free account with an email and password, then press Save to keep your notes in the cloud and open them on any device. Signed-in users can connect MCP-compatible AI assistants to their cloud notes with personal access tokens; OAuth sign-in is planned.",
   tagline: "A free online notepad with live Markdown",
   locale: "en_US",
   language: "en",
@@ -36,7 +36,7 @@ export const site = {
   mcpUpdated: "2026-11-21",
   colors: { light: "#efebdf", dark: "#242423", ink: "#3d3d3a", paper: "#f8f5ec" },
   features: [
-    "Opens straight into a blank note — no sign-up required",
+    "Start a blank note without signing up",
     "Notes autosave in the browser as you type",
     "Live Markdown: bullets, numbered lists, checklists, headings, horizontal rules, quotes, links and inline styles",
     "Paste from anywhere: web pages, docs, spreadsheets and Excalidraw text become clean Markdown",

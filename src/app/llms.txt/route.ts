@@ -15,7 +15,7 @@ export function GET() {
     "",
     "## Pages",
     "",
-    `- [Notepad](${absoluteUrl("/")}): open it and start typing; no sign-up needed.`,
+    `- [Notepad](${absoluteUrl("/write")}): open it and start typing; no sign-up needed.`,
     `- [About, Markdown shortcuts and FAQ](${absoluteUrl("/about")}): how Quick Notes works, what Markdown it supports, keyboard shortcuts and answers to common questions.`,
     `- [Sign in or create an account](${absoluteUrl("/login")}): optional, to sync notes across devices.`,
     "",

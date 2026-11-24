@@ -1,0 +1,1891 @@
+/*
+ * Home page. Paper sections and ink sections alternate; ink is the page's text colour used as a background, so the
+ * same rules work in light and dark. All motion is GSAP (Landing.tsx). Without motion (reduced motion, or before
+ * JavaScript), every element sits in its final, readable state.
+ */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* The landing page is always light, whatever theme the app is set to. light-dark() resolves per element, so a light
+   color-scheme here turns every token on the page to its light value. Shadows are plain tokens, so set them too. */
+/* Doubled :root outranks :root[data-theme="dark"], so the page and its dialogs (portalled to <body>) stay light. */
+:root:root:has(.lx-page) {
+  color-scheme: light;
+  background: #efebdf;
+}
+
+.lx-page {
+  color-scheme: light;
+  --elev-xs: 0 1px 2px rgb(20 20 19 / 0.06);
+  --elev-pad: 0 1px 2px rgb(20 20 19 / 0.04), 0 12px 32px -12px rgb(20 20 19 / 0.12);
+  --elev-menu: 0 10px 30px -8px rgb(20 20 19 / 0.22), 0 2px 6px rgb(20 20 19 / 0.06);
+  --elev-overlay: 0 20px 48px -12px rgb(20 20 19 / 0.25);
+  /* The app's colour tokens, declared again here so they resolve with this element's light color-scheme. */
+  --canvas: light-dark(#efebdf, #242423);
+  --sidebar: light-dark(#e9e4d5, #1d1d1c);
+  --pad: light-dark(#f8f5ec, #2e2e2c);
+  --logo-tile: light-dark(#2b2a27, #3d3c38);
+  --text: light-dark(#141413, #f5f4ed);
+  --text-secondary: light-dark(#3d3d3a, #c2c0b6);
+  --text-muted: light-dark(#4d4c47, #b0aea6);
+  --border: light-dark(rgb(31 30 29 / 0.12), rgb(255 255 255 / 0.1));
+  --rule: light-dark(rgb(31 30 29 / 0.07), rgb(255 255 255 / 0.06));
+  --accent: light-dark(#44597a, #8fa3bf);
+  --accent-hover: light-dark(#3f5170, #a9bad1);
+  --accent-soft: light-dark(rgb(31 30 29 / 0.06), rgb(255 255 255 / 0.07));
+  --accent-soft-hover: light-dark(rgb(31 30 29 / 0.09), rgb(255 255 255 / 0.09));
+  --primary: light-dark(#2b2a27, #8fa3bf);
+  --hover: light-dark(rgb(31 30 29 / 0.05), rgb(255 255 255 / 0.07));
+  --selected: light-dark(#d9d3c1, #2f2f2d);
+  --danger: light-dark(#b3261e, #d98a84);
+  --success: light-dark(#4a7d4c, #7fb884);
+  --warning: light-dark(#9a6a12, #e0b55c);
+  --ring: light-dark(#44597a, #8fa3bf);
+  --on-accent: light-dark(#f8f5ec, #141413);
+  --selection: light-dark(rgb(68 89 122 / 0.22), rgb(143 163 191 / 0.3));
+  --line: light-dark(rgb(31 30 29 / 0.12), rgb(255 255 255 / 0.09));
+  --margin-ink: light-dark(rgb(68 89 122 / 0.5), rgb(143 163 191 / 0.45));
+  --hand: var(--font-patrick-hand), cursive;
+  --mono: var(--font-geist-mono), ui-monospace, monospace;
+  --gutter: clamp(16px, 4vw, 56px);
+  --ink: var(--text);
+  --paper: var(--canvas);
+  --ink-raise: color-mix(in srgb, var(--paper) 7%, var(--ink));
+  --sticky: light-dark(#f4e49c, #5b5122);
+  --pale-accent: light-dark(#a9bad1, #44597a);
+
+  position: relative;
+  overflow-x: clip;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  --serif: var(--font-plex-serif), Georgia, serif;
+  --ink-bg: light-dark(#262624, #ebe7db);
+  --ink-fg: light-dark(#f5f4ed, #1f1e1d);
+  --radius-btn: 10px;
+}
+
+/* Dark bands: a warm charcoal in light mode, warm paper in dark mode. Inside them, ink and paper swap. */
+.lx-loader,
+.lx-marquee,
+.lx-strip {
+  --ink: var(--ink-bg);
+  --paper: var(--ink-fg);
+  --ink-raise: color-mix(in srgb, var(--ink-fg) 6%, var(--ink-bg));
+}
+
+.lx-page :where(a, button, summary):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.lx-skip {
+  position: fixed;
+  left: 16px;
+  top: -100px;
+  z-index: 120;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--on-accent);
+}
+
+.lx-skip:focus {
+  top: 12px;
+}
+
+/* ---------------- Buttons ---------------- */
+
+.lx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-btn);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+  transition: background-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
+}
+
+.lx-btn-solid {
+  background: var(--primary);
+  color: var(--on-accent);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 2px rgb(20 20 19 / 0.2), 0 6px 16px -8px rgb(20 20 19 / 0.35);
+}
+
+.lx-btn-solid:hover {
+  background: color-mix(in srgb, var(--primary) 85%, var(--paper));
+}
+
+.lx-btn-solid:disabled {
+  opacity: 0.6;
+}
+
+.lx-btn-line {
+  border-color: var(--border);
+  background: var(--pad);
+  color: var(--ink);
+  box-shadow: var(--elev-xs);
+}
+
+.lx-btn-line:hover {
+  background: var(--hover);
+}
+
+.lx-btn-big {
+  height: 48px;
+  padding: 0 22px;
+  font-size: 1rem;
+}
+
+.lx-btn-huge {
+  height: 54px;
+  padding: 0 28px;
+  font-size: 1.0625rem;
+}
+
+.lx-text-link {
+  color: inherit;
+  font-weight: 550;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 5px;
+}
+
+/* ---------------- Loader ---------------- */
+
+.lx-loader {
+  display: none;
+}
+
+.lx-motion .lx-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--gutter);
+  background: var(--ink);
+  color: var(--paper);
+  clip-path: inset(0% 0% 0% 0%);
+  /* If the script never runs, the loader still gets out of the way. */
+  animation: lx-loader-escape 0.4s 7s forwards;
+}
+
+@keyframes lx-loader-escape {
+  to {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+.lx-loader-mask {
+  overflow: hidden;
+}
+
+.lx-loader-word,
+.lx-loader-count {
+  display: block;
+  font-size: clamp(4rem, 15vw, 13rem);
+}
+
+.lx-loader-word {
+  font-size: clamp(2.25rem, 6vw, 5.5rem);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  font-family: var(--serif);
+}
+
+.lx-loader-count-wrap {
+  align-self: flex-end;
+}
+
+.lx-loader-count {
+  font-family: var(--hand);
+  font-size: clamp(5rem, 22vw, 20rem);
+  line-height: 0.95;
+}
+
+.lx-loader-pen {
+  width: min(70vw, 720px);
+  stroke: var(--paper);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.lx-loader-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+/* ---------------- Header ---------------- */
+
+.lx-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px var(--gutter);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
+  border-bottom: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  backdrop-filter: blur(14px) saturate(1.3);
+}
+
+.lx-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.lx-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lx-nav-link {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.lx-nav-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.lx-header .lx-theme {
+  color: inherit;
+}
+
+.lx-header .lx-btn-solid {
+  margin-left: 8px;
+  height: 38px;
+  padding: 0 14px;
+  font-size: 0.875rem;
+}
+
+/* ---------------- Hero ---------------- */
+
+.lx-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(120px, 18vh, 180px) var(--gutter) 0;
+  overflow: hidden;
+}
+
+.lx-hero-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.lx-rules {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  pointer-events: none;
+}
+
+.lx-rule {
+  display: block;
+  height: 1px;
+  background: var(--line);
+}
+
+.lx-margin-line {
+  position: absolute;
+  inset-block: 0;
+  left: calc(var(--gutter) * 0.55);
+  width: 1.5px;
+  background: var(--margin-ink);
+}
+
+.lx-title {
+  position: relative;
+  z-index: 2;
+  margin: 0;
+  font-size: clamp(3.4rem, 10.5vw, 11rem);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  font-family: var(--serif);
+}
+
+.lx-motion .lx-title {
+  visibility: hidden;
+}
+
+.lx-title-line {
+  padding-bottom: 0.06em;
+}
+
+.lx-scribble {
+  position: relative;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0.15em 0 0 18%;
+  color: var(--accent);
+  font-family: var(--hand);
+  font-size: clamp(1.4rem, 2.6vw, 2.4rem);
+  line-height: 1;
+  rotate: -4deg;
+}
+
+.lx-scribble-text {
+  display: inline-block;
+}
+
+.lx-scribble-arrow {
+  width: clamp(40px, 4.6vw, 64px);
+  margin-top: -0.9em;
+  rotate: 200deg;
+  scale: -1 1;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lx-scribble-arrow path {
+  stroke-dasharray: 1;
+}
+
+.lx-lede {
+  max-width: 50ch;
+  margin: clamp(24px, 4vh, 36px) 0 0;
+  color: var(--text-secondary);
+  font-size: clamp(1.0625rem, 1.3vw, 1.1875rem);
+  line-height: 1.6;
+}
+
+.lx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+/* ---------------- Marquee ---------------- */
+
+.lx-marquee {
+  padding: clamp(36px, 6vh, 72px) 0;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.lx-mq-row {
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.lx-mq-track {
+  display: inline-flex;
+  will-change: transform;
+}
+
+.lx-mq-track span {
+  display: inline-flex;
+  align-items: center;
+  font-size: clamp(2.4rem, 6.2vw, 6rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-family: var(--serif);
+}
+
+.lx-mq-dot {
+  display: inline-block;
+  width: 0.16em;
+  height: 0.16em;
+  margin: 0 0.4em;
+  border-radius: 50%;
+  background: var(--pale-accent);
+}
+
+.lx-mq-hand .lx-mq-track span {
+  margin-right: 1.4em;
+  font-family: var(--hand);
+  font-size: clamp(1.8rem, 4.6vw, 4.25rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+
+/* ---------------- Pinned typing scene ---------------- */
+
+.lx-type {
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+  padding: 96px var(--gutter);
+}
+
+.lx-type-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(32px, 6vw, 96px);
+  align-items: center;
+  width: min(1280px, 100%);
+}
+
+.lx-type-title {
+  margin: 0 0 24px;
+  font-size: clamp(2.2rem, 4.2vw, 3.9rem);
+  font-weight: 400;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  font-family: var(--serif);
+}
+
+.lx-type-copy p {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.0625rem;
+}
+
+.lx-type-progress {
+  width: 180px;
+  height: 3px;
+  margin-top: 36px;
+  border-radius: 99px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.lx-type-progress span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform: scaleX(1);
+  transform-origin: 0 50%;
+}
+
+.lx-motion .lx-type-progress span {
+  transform: scaleX(0);
+}
+
+.lx-tl {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--hand);
+  font-size: 1.45rem;
+  white-space: nowrap;
+}
+
+.lx-tl-raw {
+  color: var(--text-secondary);
+  font-family: var(--mono);
+  font-size: 0.9375rem;
+}
+
+.lx-tl-out {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lx-tl[data-state="idle"] .lx-tl-raw,
+.lx-tl[data-state="idle"] .lx-tl-out,
+.lx-tl[data-state="typing"] .lx-tl-out,
+.lx-tl[data-state="done"] .lx-tl-raw {
+  display: none;
+}
+
+.lx-motion .lx-tl[data-state="done"] .lx-tl-out {
+  animation: lx-pop 450ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+@keyframes lx-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+}
+
+.lx-tl-h .lx-tl-out {
+  font-size: 1.45em;
+  font-weight: 700;
+}
+
+.lx-tl-done .lx-tl-out {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.lx-tl-quote .lx-tl-out {
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  color: var(--text-secondary);
+}
+
+.lx-tl-out code {
+  padding: 1px 8px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  font-family: var(--mono);
+  font-size: 0.66em;
+}
+
+.lx-ol {
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+.lx-caret {
+  display: none;
+}
+
+.lx-motion .lx-caret {
+  display: inline-block;
+  flex: none;
+  width: 2px;
+  height: 1.2em;
+  margin-left: 2px;
+  background: var(--accent);
+  animation: lx-blink 1s steps(1) infinite;
+}
+
+.lx-motion .lx-type-lines > .lx-caret {
+  visibility: hidden;
+}
+
+@keyframes lx-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---------------- Horizontal strip (ink) ---------------- */
+
+.lx-strip {
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.lx-strip-track {
+  display: flex;
+  align-items: center;
+  gap: clamp(24px, 4vw, 64px);
+  width: max-content;
+  height: 100svh;
+  padding: 0 clamp(24px, 6vw, 96px);
+  will-change: transform;
+}
+
+.lx-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(24px, 4vw, 64px);
+  align-items: center;
+  width: min(80vw, 1120px);
+  height: min(72svh, 640px);
+  padding: clamp(28px, 4vw, 64px);
+  border-radius: 20px;
+  background: var(--ink-raise);
+  border: 1px solid color-mix(in srgb, var(--paper) 9%, transparent);
+}
+
+.lx-panel-intro {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(60vw, 820px);
+  background: none;
+  border: 0;
+}
+
+.lx-panel-intro h2 {
+  margin: 0;
+  font-size: clamp(2.6rem, 6vw, 6rem);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-family: var(--serif);
+}
+
+.lx-panel-hint {
+  margin: 28px 0 0;
+  color: var(--pale-accent);
+  font-family: var(--hand);
+  font-size: 1.6rem;
+}
+
+.lx-panel-copy h3 {
+  margin: 0 0 18px;
+  font-size: clamp(1.8rem, 2.8vw, 2.75rem);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  font-family: var(--serif);
+}
+
+.lx-panel-copy p {
+  max-width: 36ch;
+  margin: 0 0 18px;
+  opacity: 0.72;
+  font-size: 1.0625rem;
+}
+
+/* Paste: the junk flies off, the clean note stays. */
+.lx-paste-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 340px;
+}
+
+.lx-junk {
+  position: absolute;
+  z-index: 2;
+  padding: 6px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.lx-j1 {
+  top: 6%;
+  left: 4%;
+  background: #fff2b8;
+  color: #5c4a00;
+  font-size: 0.875rem;
+  rotate: -6deg;
+}
+
+.lx-j2 {
+  top: 10%;
+  right: 6%;
+  background: #b3261e;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  rotate: 8deg;
+}
+
+.lx-j3 {
+  bottom: 22%;
+  left: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: Georgia, serif;
+  font-size: 1.4rem;
+}
+
+.lx-j4 {
+  bottom: 6%;
+  right: 2%;
+  border: 1px solid color-mix(in srgb, var(--paper) 30%, transparent);
+  font-size: 0.875rem;
+  rotate: -4deg;
+}
+
+.lx-j5 {
+  top: 42%;
+  right: -2%;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.lx-j6 {
+  top: 2%;
+  left: 40%;
+  color: #ff8bd1;
+  font-family: "Comic Sans MS", cursive;
+  font-size: 0.95rem;
+}
+
+.lx-clean {
+  width: min(100%, 360px);
+  padding: 18px 24px 24px;
+  border-radius: 12px;
+  background: var(--paper);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 39px, var(--line) 39px 40px);
+  background-position: 0 18px;
+  color: var(--ink);
+  font-family: var(--hand);
+  font-size: 1.4rem;
+  line-height: 40px;
+}
+
+.lx-clean p {
+  margin: 0;
+}
+
+.lx-clean-h {
+  font-size: 1.35em;
+  font-weight: 700;
+}
+
+.lx-clean-in {
+  padding-left: 1.4em;
+}
+
+/* Tables */
+.lx-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1.5px solid color-mix(in srgb, var(--paper) 35%, transparent);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lx-grid-head {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--pale-accent);
+}
+
+.lx-grid-cell {
+  padding: 14px 20px;
+  border-right: 1px solid color-mix(in srgb, var(--paper) 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--paper) 18%, transparent);
+  font-family: var(--hand);
+  font-size: clamp(1.2rem, 1.8vw, 1.6rem);
+}
+
+.lx-grid-th {
+  font-weight: 700;
+  border-bottom-color: color-mix(in srgb, var(--paper) 45%, transparent);
+}
+
+/* Fonts: a split-flap of four hands */
+.lx-faces {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.lx-face-window {
+  position: relative;
+  width: 100%;
+  height: 1.15em;
+  overflow: hidden;
+  font-size: clamp(3.75rem, 8vw, 8rem);
+  line-height: 1.1;
+}
+
+.lx-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+/* Without motion, show only the first face. */
+.lx-face + .lx-face {
+  visibility: hidden;
+}
+
+.lx-motion .lx-face + .lx-face {
+  visibility: visible;
+}
+
+.lx-face-names {
+  position: relative;
+  height: 1.6em;
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+.lx-face-name {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+}
+
+.lx-face-name + .lx-face-name {
+  visibility: hidden;
+}
+
+.lx-motion .lx-face-name + .lx-face-name {
+  visibility: visible;
+}
+
+/* Share */
+.lx-share {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.lx-link-chip {
+  max-width: 100%;
+  padding: 16px 22px;
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: clamp(0.9rem, 1.4vw, 1.15rem);
+  overflow-wrap: anywhere;
+}
+
+.lx-slug {
+  color: var(--accent);
+}
+
+.lx-toast {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--pale-accent);
+  color: light-dark(#141413, #f5f4ed);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/* AI terminal */
+.lx-term {
+  padding: 26px 28px;
+  border: 1px solid color-mix(in srgb, var(--paper) 16%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, #000 30%, var(--ink-raise));
+  color: #f5f4ed;
+  font-family: var(--mono);
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  line-height: 1.8;
+}
+
+.lx-term p {
+  margin: 0;
+}
+
+.lx-term-you {
+  color: var(--pale-accent);
+}
+
+.lx-term-out {
+  opacity: 0.8;
+}
+
+.lx-term-url {
+  margin-top: 14px !important;
+  opacity: 0.45;
+  font-size: 0.8em;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------- Phone ---------------- */
+
+.lx-phone-scene {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(32px, 6vw, 96px);
+  align-items: center;
+  min-height: 100svh;
+  padding: 96px var(--gutter);
+}
+
+.lx-phone-copy h2 {
+  margin: 0 0 22px;
+  font-size: clamp(2.4rem, 4.6vw, 4.4rem);
+  font-weight: 400;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  font-family: var(--serif);
+}
+
+.lx-phone-copy p {
+  max-width: 44ch;
+  margin: 0 0 28px;
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+}
+
+.lx-soon {
+  max-width: 44ch;
+  padding-left: 16px;
+  border-left: 3px solid var(--margin-ink);
+  font-size: 1rem !important;
+}
+
+.lx-phone-stage {
+  perspective: 1400px;
+}
+
+/* ---------------- Ending ---------------- */
+
+.lx-end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(36px, 6vh, 64px);
+  padding: clamp(96px, 18vh, 200px) var(--gutter) clamp(72px, 12vh, 140px);
+}
+
+.lx-end-title {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: clamp(3.6rem, 12vw, 12rem);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-family: var(--serif);
+}
+
+.lx-end-word {
+  position: relative;
+  color: transparent;
+  -webkit-text-stroke: 1px var(--ink);
+}
+
+.lx-end-fill {
+  position: absolute;
+  inset: 0;
+  color: var(--ink);
+  -webkit-text-stroke: 0;
+}
+
+.lx-try {
+  width: min(100%, 860px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--pad);
+  box-shadow: var(--elev-pad);
+  transition: box-shadow 200ms ease;
+}
+
+.lx-try:focus-within {
+  box-shadow:
+    var(--elev-pad),
+    0 0 0 2px var(--ring);
+}
+
+.lx-try-field {
+  display: block;
+  width: 100%;
+  min-height: calc(44px * 3 + 16px);
+  margin: 0;
+  padding: 26px 28px 0;
+  border: 0;
+  background: transparent;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 43px, var(--line) 43px 44px);
+  background-position: 0 16px;
+  color: var(--ink);
+  caret-color: var(--accent);
+  font-family: var(--hand);
+  font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+  line-height: 44px;
+  resize: none;
+  overflow: hidden;
+  outline: none;
+}
+
+.lx-try-field::placeholder {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.lx-try-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  min-height: 72px;
+  padding: 12px 28px 16px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* ---------------- Footer ---------------- */
+
+.lx-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin: 0 var(--gutter);
+  padding: 28px 0 40px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.lx-footer p {
+  margin: 0;
+}
+
+.lx-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.lx-footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.lx-footer a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ---------------- Narrow screens: same scenes, stacked ---------------- */
+
+@media (max-width: 899px) {
+  .lx-nav-link {
+    display: none;
+  }
+
+  .lx-type-inner,
+  .lx-phone-scene {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lx-type {
+    padding-top: 72px;
+  }
+
+  .lx-tl {
+    font-size: 1.15rem;
+  }
+
+  .lx-tl-raw {
+    font-size: 0.78rem;
+  }
+
+  .lx-strip-track {
+    flex-direction: column;
+    width: auto;
+    height: auto;
+    padding: 72px var(--gutter);
+  }
+
+  .lx-panel,
+  .lx-panel-intro {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    height: auto;
+  }
+
+  .lx-panel-intro h2 {
+    font-size: clamp(3rem, 15vw, 5rem);
+  }
+
+  .lx-phone-stage {
+    justify-self: center;
+  }
+
+  .lx-btn-huge {
+    height: 60px;
+    padding: 0 32px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .lx-header .lx-btn-solid {
+    display: none;
+  }
+
+  .lx-actions,
+  .lx-actions .lx-btn {
+    width: 100%;
+  }
+}
+
+/* Without motion the strip is never pinned, so it stacks like it does on phones and every panel stays reachable. */
+html:not(.lx-motion) .lx-strip-track {
+  flex-direction: column;
+  width: auto;
+  height: auto;
+  padding: 96px var(--gutter);
+}
+
+html:not(.lx-motion) .lx-panel {
+  width: 100%;
+  height: auto;
+}
+
+
+/* ---------------- Checkboxes (paper stack) ---------------- */
+
+.lx-box {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--text-secondary);
+  border-radius: 4px;
+}
+
+.lx-box-on {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.lx-box-on::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--on-accent);
+  border-width: 0 2px 2px 0;
+  rotate: 45deg;
+}
+
+/* ---------------- Hero product window ---------------- */
+
+.lx-shot-stage {
+  position: relative;
+  z-index: 1;
+  width: min(1180px, 100%);
+  margin-top: clamp(56px, 9vh, 96px);
+  perspective: 1800px;
+}
+
+.lx-shot {
+  transform-origin: 50% 0%;
+  will-change: transform;
+}
+
+/* A real-looking app frame: canvas, sidebar, the ruled pad. Same tokens as the app, so it follows the theme. */
+.am {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  height: clamp(420px, 54vw, 620px);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  background: var(--canvas);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.35) inset,
+    0 -1px 0 rgb(20 20 19 / 0.02),
+    0 30px 80px -30px rgb(20 20 19 / 0.28),
+    0 14px 30px -18px rgb(20 20 19 / 0.18);
+  text-align: left;
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}
+
+.am-side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+  border-right: 1px solid var(--border);
+  background: var(--sidebar);
+  font-size: 0.875rem;
+}
+
+.am-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 6px 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.am-new {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: var(--accent-soft-hover);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.am-label {
+  margin: 14px 10px 4px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.am-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-secondary);
+}
+
+.am-list li {
+  padding: 7px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.am-list .is-active {
+  background: var(--selected);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.am-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  padding: 10px 6px 0;
+  border-top: 1px solid var(--border);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.am-user small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.am-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--selected);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.am-main {
+  padding: 14px 14px 0;
+  min-width: 0;
+}
+
+.am-pad {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0 clamp(20px, 3vw, 40px);
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  background: var(--pad);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule) 27px 28px);
+  background-position: 0 6px;
+  box-shadow: var(--elev-xs);
+}
+
+.am-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 62px;
+}
+
+.am-title {
+  color: var(--text-secondary);
+  font-family: var(--hand);
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.am-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.am-body {
+  font-family: var(--hand);
+  font-size: 1.125rem;
+  line-height: 28px;
+}
+
+.am-body p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.am-h {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.am-body s {
+  color: var(--text-muted);
+}
+
+.am-box {
+  position: relative;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--text-secondary);
+  border-radius: 4px;
+  transition:
+    background-color 300ms ease,
+    border-color 300ms ease;
+}
+
+.am-box.is-on,
+.am-tick.is-on .am-box {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.am-box.is-on::after,
+.am-tick.is-on .am-box::after {
+  content: "";
+  position: absolute;
+  left: 3.5px;
+  top: 0.5px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--on-accent);
+  border-width: 0 2px 2px 0;
+  rotate: 45deg;
+}
+
+.am-tick span {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0 1.5px;
+  transition:
+    background-size 500ms var(--ease-soft),
+    color 300ms ease;
+}
+
+.am-tick.is-on span {
+  color: var(--text-muted);
+  background-size: 100% 1.5px;
+}
+
+.am-caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 20px;
+  margin-left: -6px;
+  background: var(--accent);
+  animation: lx-blink 1s steps(1) infinite;
+}
+
+.am-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding: 14px 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.am-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+/* ---------------- Typing scene: a stack of notebook paper ---------------- */
+
+.lx-paper {
+  position: relative;
+  padding: 18px 10px 26px;
+}
+
+.lx-paper-sheet,
+.lx-paper-front {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--pad);
+}
+
+.lx-paper-sheet {
+  position: absolute;
+  inset: 18px 10px 26px;
+  box-shadow: var(--elev-xs);
+}
+
+.lx-paper-back2 {
+  rotate: -3.2deg;
+  translate: -10px 8px;
+  background: color-mix(in srgb, var(--pad) 92%, var(--ink));
+}
+
+.lx-paper-back1 {
+  rotate: 1.8deg;
+  translate: 8px 4px;
+  background: color-mix(in srgb, var(--pad) 96%, var(--ink));
+}
+
+.lx-paper-front {
+  position: relative;
+  padding: 26px 30px 28px 78px;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 41px, var(--line) 41px 42px);
+  background-position: 0 6px;
+  box-shadow:
+    0 1px 1px rgb(20 20 19 / 0.04),
+    0 24px 48px -24px rgb(20 20 19 / 0.28);
+}
+
+/* The notebook margin. */
+.lx-paper-front::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 58px;
+  width: 1.5px;
+  background: var(--margin-ink);
+}
+
+.lx-paper-holes {
+  position: absolute;
+  inset-block: 0;
+  left: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 36px 0;
+}
+
+.lx-paper-holes i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 1px 2px rgb(20 20 19 / 0.25);
+}
+
+.lx-paper-date {
+  height: 42px;
+  margin: 0;
+  color: var(--text-muted);
+  font-family: var(--hand);
+  font-size: 1.05rem;
+  line-height: 42px;
+  text-align: right;
+}
+
+.lx-type-lines {
+  min-height: calc(42px * 7);
+  font-family: var(--hand);
+}
+
+.lx-tl {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.4rem;
+  white-space: nowrap;
+}
+
+/* While a line is being typed, its Markdown shows in faint handwriting, like the editor's dimmed markers. */
+.lx-tl-raw {
+  color: var(--text-muted);
+  font-family: var(--hand);
+  font-size: 1em;
+}
+
+/* ---------------- Phone: an Android device ---------------- */
+
+.lx-phone-stage {
+  perspective: 1600px;
+}
+
+.lx-device {
+  position: relative;
+  width: 300px;
+  height: 628px;
+  padding: 9px;
+  border-radius: 46px;
+  background: linear-gradient(145deg, #3a3936, #1d1c1a 55%, #2c2b28);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(255 255 255 / 0.08),
+    inset 0 0 0 4px #121211,
+    0 2px 4px rgb(20 20 19 / 0.12),
+    0 40px 80px -28px rgb(20 20 19 / 0.45),
+    0 18px 36px -20px rgb(20 20 19 / 0.3);
+  will-change: transform;
+}
+
+.lx-device-key {
+  position: absolute;
+  right: -3px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(to right, #2a2927, #3d3c39);
+}
+
+.lx-device-power {
+  top: 150px;
+  height: 64px;
+}
+
+.lx-device-volume {
+  top: 240px;
+  height: 104px;
+}
+
+.lx-device-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 38px;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.lx-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 38px;
+  padding: 0 24px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.lx-camera {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #3c4a5c, #0c0c0c 60%);
+  translate: -50% 0;
+}
+
+.lx-status-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.lx-appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  padding: 0 18px;
+  color: var(--text-secondary);
+}
+
+.lx-appbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.lx-mnote {
+  flex: 1;
+  margin: 4px 10px 0;
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  background: var(--pad);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule) 35px 36px);
+  background-position: 0 10px;
+  font-family: var(--hand);
+}
+
+.lx-mnote p {
+  margin: 0;
+}
+
+.lx-mnote-meta {
+  height: 36px;
+  color: var(--text-muted);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 0.6875rem;
+  line-height: 36px;
+}
+
+.lx-mnote-title {
+  height: 36px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 36px;
+}
+
+.lx-mtask,
+.lx-mnote-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  font-size: 1.2rem;
+}
+
+.lx-mbox {
+  position: relative;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--text-secondary);
+  border-radius: 5px;
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    transform 260ms var(--ease-soft);
+}
+
+.lx-mtask span {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0 1.5px;
+  transition:
+    background-size 420ms var(--ease-soft),
+    color 260ms ease;
+}
+
+.lx-mtask.is-done .lx-mbox {
+  border-color: var(--accent);
+  background: var(--accent);
+  transform: scale(1.08);
+}
+
+.lx-mtask.is-done .lx-mbox::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--on-accent);
+  border-width: 0 2px 2px 0;
+  rotate: 45deg;
+}
+
+.lx-mtask.is-done span {
+  color: var(--text-muted);
+  background-size: 100% 1.5px;
+}
+
+.lx-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 52px;
+  margin: 0 10px;
+  border-top: 1px solid var(--border);
+  background: var(--pad);
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.lx-toolbar i {
+  font-family: var(--serif);
+}
+
+.lx-tool-h {
+  font-weight: 700;
+}
+
+.lx-gesture {
+  align-self: center;
+  width: 110px;
+  height: 4px;
+  margin: 10px 0 9px;
+  border-radius: 999px;
+  background: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ---------------- Narrow screens for the new pieces ---------------- */
+
+@media (max-width: 899px) {
+  .am {
+    grid-template-columns: minmax(0, 1fr);
+    height: 440px;
+  }
+
+  .am-side {
+    display: none;
+  }
+
+  .lx-paper-front {
+    padding: 18px 16px 20px 52px;
+  }
+
+  .lx-paper-front::before {
+    left: 38px;
+  }
+
+  .lx-paper-holes {
+    left: 11px;
+  }
+
+  .lx-paper-holes i {
+    width: 11px;
+    height: 11px;
+  }
+
+  .lx-tl {
+    font-size: 1.15rem;
+  }
+
+  .lx-device {
+    width: 272px;
+    height: 570px;
+  }
+
+  .lx-scribble {
+    margin-left: 6%;
+  }
+}
+
+
+/* ---------------- Get the app ---------------- */
+
+button.lx-nav-link {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.lx-get-title {
+  font-family: var(--font-plex-serif), Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.lx-get-primary {
+  width: 100%;
+}
+
+.lx-get-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 16px 14px 32px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.lx-get-steps b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.lx-get-done {
+  margin: 0;
+  color: var(--success);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.lx-get-apk {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.lx-get-apk small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.lx-get-badge {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}

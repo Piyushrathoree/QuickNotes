@@ -16,7 +16,7 @@ async function Dashboard() {
   return <AppShell />;
 }
 
-// The signed-in home. Guests are sent to the login page; guest notes still live at "/".
+// The signed-in home. Guests are sent to the login page; guest notes are available at "/write".
 // The session is read inside Suspense so the rest of the route can prerender (Cache Components).
 export default function DashboardPage() {
   return (

@@ -58,7 +58,7 @@ export default function ComparePage() {
       <header className="border-b border-border">
         <div className="mx-auto flex min-h-14 max-w-3xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/" className="text-[15px] font-semibold tracking-tight hover:underline">Quick Notes</Link>
-          <Link href="/" className={buttonClass}>Start writing</Link>
+          <Link href="/write" className={buttonClass}>Start writing</Link>
         </div>
       </header>
 
@@ -97,7 +97,7 @@ export default function ComparePage() {
         ))}
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
-          <Link href="/" className={buttonClass}>Try Quick Notes</Link>
+          <Link href="/write" className={buttonClass}>Try Quick Notes</Link>
           <Link href="/about" className={`${linkClass} text-sm`}>Read the Quick Notes guide</Link>
         </div>
       </main>

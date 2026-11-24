@@ -94,7 +94,7 @@ function AccountMenu({ user, side, align, children }: AccountMenuProps) {
     await signOut();
     clearCurrentUserCloudCache();
     // The store re-reads the guest notes on sign-out; leave /dashboard, which is for signed-in users only.
-    router.replace("/");
+    router.replace("/write");
     router.refresh();
   }
 

@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: site.name,
     description: site.description,
     id: "/",
-    start_url: "/",
+    start_url: "/write",
     scope: "/",
     display: "standalone",
     orientation: "any",

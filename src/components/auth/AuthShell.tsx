@@ -18,7 +18,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
           {children}
 
           <div className="mt-7 flex justify-center border-t border-border pt-2">
-            <Link href="/" className={`${authLinkClass} inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground`}>
+            <Link href="/write" className={`${authLinkClass} inline-flex min-h-11 items-center px-2 text-sm text-muted-foreground`}>
               Continue as guest
             </Link>
           </div>

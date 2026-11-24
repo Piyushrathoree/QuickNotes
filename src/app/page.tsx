@@ -1,32 +1,29 @@
 import type { Metadata } from "next";
 
-import { AppShell } from "@/components/AppShell";
+import { Landing } from "@/components/home/Landing";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { site } from "@/lib/site";
+import { absoluteUrl, site } from "@/lib/site";
 import { homeStructuredData } from "@/lib/structuredData";
+import "@/components/home/home.css";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: { url: "/" },
 };
 
+/** A signed APK on HTTPS enables the direct Android download. Without one the buttons show the install options. */
+function androidDownload(): string | null {
+  const url = URL.parse(process.env.QUICKNOTES_ANDROID_APK_URL?.trim() ?? "");
+  return url?.protocol === "https:" && !url.username && !url.password && url.pathname.toLowerCase().endsWith(".apk")
+    ? url.href
+    : null;
+}
+
 export default function Home() {
   return (
     <>
-      {/* The page is the notepad itself; this heading names it for search engines and screen readers. */}
-      <h1 className="sr-only">{site.title}</h1>
       <JsonLd data={homeStructuredData()} />
-      <noscript>
-        <div style={{ padding: "24px", fontFamily: "system-ui, sans-serif", maxWidth: 640 }}>
-          <p>
-            <strong>{site.name}</strong> — {site.summary}
-          </p>
-          <p>
-            Quick Notes needs JavaScript to run the editor. <a href="/about">Read about Quick Notes and its features</a>.
-          </p>
-        </div>
-      </noscript>
-      <AppShell />
+      <Landing apkUrl={androidDownload()} mcpUrl={absoluteUrl("/api/mcp")} repoUrl={site.repo} />
     </>
   );
 }

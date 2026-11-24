@@ -90,7 +90,7 @@ export function SharedNoteView({ title, body, updatedAt, slug }: SharedNoteViewP
           <LogoMark size={30} />
           <span>Quick Notes</span>
         </Link>
-        <Link className="shared-note-open-link" href="/">
+        <Link className="shared-note-open-link" href="/write">
           Open Quick Notes
           <ArrowUpRight aria-hidden="true" size={16} strokeWidth={1.8} />
         </Link>
@@ -127,7 +127,7 @@ export function SharedNoteView({ title, body, updatedAt, slug }: SharedNoteViewP
       </main>
 
       <footer className="shared-note-footer">
-        Shared with <Link href="/">Quick Notes</Link> · <Link href="/">Write your own</Link>
+        Shared with <Link href="/">Quick Notes</Link> · <Link href="/write">Write your own</Link>
       </footer>
     </div>
   );
