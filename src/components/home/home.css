@@ -2205,3 +2205,95 @@ button.lx-nav-link {
 .lx-end {
   padding-top: clamp(40px, 6vw, 88px);
 }
+
+/* ---------------- Typing scene: a bigger sheet and a legend that lights up ---------------- */
+
+.lx-paper-front {
+  padding-block: 30px 34px;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 45px, var(--line) 45px 46px);
+}
+
+.lx-paper-date {
+  height: 46px;
+  line-height: 46px;
+}
+
+.lx-type-lines {
+  min-height: calc(46px * 8);
+}
+
+.lx-tl {
+  height: 46px;
+  font-size: 1.55rem;
+}
+
+.lx-bul {
+  margin-right: 10px;
+  color: var(--accent);
+}
+
+.lx-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 460px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lx-chip {
+  padding: 5px 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    color 260ms ease;
+}
+
+/* With motion on, a chip waits dim until its line has been typed. Without it, every chip stays lit. */
+.lx-motion .lx-chip:not(.is-on) {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.lx-chip.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft-hover);
+  color: var(--text);
+}
+
+@media (max-width: 899px) {
+  .lx-tl {
+    font-size: 1.2rem;
+  }
+
+  .lx-type-lines {
+    min-height: calc(46px * 8);
+  }
+}
+
+.lx-bul {
+  font-size: 1.35em;
+  line-height: 1;
+  margin-right: 12px;
+}
+
+/* A drawn dot, since the handwriting font's bullet glyph is tiny. */
+.lx-bul {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin: 0 15px 0 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  font-size: 0;
+}

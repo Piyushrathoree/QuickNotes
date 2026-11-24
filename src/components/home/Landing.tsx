@@ -26,14 +26,21 @@ interface LandingProps {
 }
 
 /** The note that types itself in the pinned scene: raw Markdown, then what the notepad shows. */
-const typingLines: { raw: string; kind: "h" | "todo" | "done" | "bold" | "ol" | "code" | "quote"; text: string }[] = [
-  { raw: "# Weekend in Lisbon", kind: "h", text: "Weekend in Lisbon" },
-  { raw: "- [ ] book the 7:40 train", kind: "todo", text: "book the 7:40 train" },
-  { raw: "- [x] find the old film camera", kind: "done", text: "find the old film camera" },
-  { raw: "1. pastéis de nata in Belém", kind: "ol", text: "pastéis de nata in Belém" },
-  { raw: "**Pack light.** two shirts, one jacket", kind: "bold", text: "two shirts, one jacket" },
-  { raw: "> the charger. always the charger.", kind: "quote", text: "the charger. always the charger." },
-  { raw: "`tickets.pdf` is in downloads", kind: "code", text: "is in downloads" },
+const typingLines: {
+  raw: string;
+  kind: "h" | "todo" | "done" | "bold" | "ol" | "code" | "quote" | "bullet";
+  text: string;
+  /** The Markdown shown in the legend; it lights up when this line has been typed. */
+  chip: string;
+}[] = [
+  { raw: "# Weekend in Lisbon", kind: "h", text: "Weekend in Lisbon", chip: "# Heading" },
+  { raw: "- [ ] book the 7:40 train", kind: "todo", text: "book the 7:40 train", chip: "- [ ] Task" },
+  { raw: "- [x] find the old film camera", kind: "done", text: "find the old film camera", chip: "- [x] Done" },
+  { raw: "1. pastéis de nata in Belém", kind: "ol", text: "pastéis de nata in Belém", chip: "1. Numbered" },
+  { raw: "- sunscreen and a hat", kind: "bullet", text: "sunscreen and a hat", chip: "- Bullet" },
+  { raw: "**Pack light.** two shirts, one jacket", kind: "bold", text: "two shirts, one jacket", chip: "**Bold**" },
+  { raw: "> the charger. always the charger.", kind: "quote", text: "the charger. always the charger.", chip: "> Quote" },
+  { raw: "`tickets.pdf` is in downloads", kind: "code", text: "is in downloads", chip: "`Code`" },
 ];
 
 const marqueeWords = ["Notes", "Lists", "Checklists", "Tables", "Code", "Links", "Drafts", "Ideas"];
@@ -163,6 +170,7 @@ export function Landing({ apkUrl, mcpUrl, repoUrl }: LandingProps) {
 
           // ---- 4. Pinned: the note types itself as you scroll, and the Markdown turns into formatting ----
           const lineEls = gsap.utils.toArray<HTMLElement>(".lx-tl");
+          const chipEls = gsap.utils.toArray<HTMLElement>(".lx-chip");
           const lengths = typingLines.map((line) => line.raw.length);
           const total = lengths.reduce((sum, n) => sum + n, 0);
           const caret = root.current?.querySelector<HTMLElement>(".lx-caret");
@@ -176,6 +184,7 @@ export function Landing({ apkUrl, mcpUrl, repoUrl }: LandingProps) {
               const len = lengths[i];
               const raw = el.querySelector<HTMLElement>(".lx-tl-raw");
               const local = typed - offset;
+              chipEls[i]?.classList.toggle("is-on", local >= len);
               if (local >= len) {
                 el.dataset.state = "done";
               } else if (local > 0) {
@@ -490,6 +499,13 @@ export function Landing({ apkUrl, mcpUrl, repoUrl }: LandingProps) {
                 Headings, checklists, lists, quotes and code turn into formatting the moment you type them. Underneath
                 it’s still plain text, so it opens anywhere.
               </p>
+              <ul className="lx-chips" aria-label="Markdown you can type">
+                {typingLines.map((line) => (
+                  <li key={line.chip} className="lx-chip is-on">
+                    {line.chip}
+                  </li>
+                ))}
+              </ul>
               <div className="lx-type-progress" aria-hidden="true">
                 <span />
               </div>
@@ -512,6 +528,7 @@ export function Landing({ apkUrl, mcpUrl, repoUrl }: LandingProps) {
                         {line.kind === "todo" && <i className="lx-box" />}
                         {line.kind === "done" && <i className="lx-box lx-box-on" />}
                         {line.kind === "ol" && <em className="lx-ol">1.</em>}
+                        {line.kind === "bullet" && <span className="lx-bul">•</span>}
                         {line.kind === "bold" && <b>Pack light. </b>}
                         {line.kind === "code" && <code>tickets.pdf</code>}
                         {line.kind === "code" ? ` ${line.text}` : line.text}
