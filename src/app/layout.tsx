@@ -133,6 +133,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${geist.variable} ${geistMono.variable} ${patrickHand.variable} ${plexMono.variable} ${plexSans.variable} ${plexSerif.variable}`}
       data-font="hand"
       suppressHydrationWarning
