@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, AppState, Keyboard, KeyboardAvoidingView, PixelRatio, Platform, Pressable, StyleSheet, TextInput, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type TextInputInstance } from 'react-native';
+import { Animated, AppState, Keyboard, KeyboardAvoidingView, PixelRatio, Platform, Pressable, StyleSheet, TextInput, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type TextInputInstance } from 'react-native';
 import * as Network from 'expo-network';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams, usePreventRemove } from 'expo-router';
@@ -9,6 +9,8 @@ import { NotePreview } from '../../components/NotePreview';
 import { NoteRules } from '../../components/NoteRules';
 import { EditHistory, type EditField, type EditSnapshot } from '../../lib/editHistory';
 import { editMarkdown } from '../../lib/markdownEditing';
+import { backspaceOutdent, caretAfterEdit, continueList, fromLive, toLive } from '../../lib/liveLists';
+import { appAlert } from '../../components/AppDialog';
 import { useAppTheme } from '../../lib/theme';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -18,9 +20,11 @@ import { deleteCloudNote, fetchNote, isTransportError, saveCloudNote } from '../
 
 const formats = [
   ['Heading', 'heading'],
+  ['Subheading', 'subheading'],
   ['Bold', 'bold'],
   ['Italic', 'italic'],
   ['Task', 'task'],
+  ['Table', 'table'],
   ['Code', 'code'],
   ['Link', 'link'],
 ] as const;
@@ -211,12 +215,12 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
     return () => subscription.remove();
   }, [ensureLocalSaved]);
   const disablePrevention = usePreventRemove(!leaving && loaded && (sequence !== persistedSequence || busy), ({ repeat }) => {
-    if (busy) { Alert.alert('Save in progress', 'Wait for the account save to finish before leaving this note.'); return; }
+    if (busy) { appAlert('Save in progress', 'Wait for the account save to finish before leaving this note.'); return; }
     void ensureLocalSaved().then(() => {
       setLeaving(true);
       repeat();
     }).catch(() => {
-      Alert.alert('Draft not saved', 'Your text is still open. Export it before leaving or try again.');
+      appAlert('Draft not saved', 'Your text is still open. Export it before leaving or try again.');
     });
   });
 
@@ -228,7 +232,7 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
 
   async function saveToAccount() {
     if (scope === 'guest') {
-      Alert.alert('Save to your account', 'This is a guest note. You can import it from the Account screen.', [
+      appAlert('Save to your account', 'This is a guest note. You can import it from the Account screen.', [
         { text: 'Cancel', style: 'cancel' }, { text: 'Open account', onPress: () => router.push('/account') },
       ]);
       return;
@@ -281,7 +285,7 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
 
   async function replaceWithCloudVersion() {
     if (!remote || !id) return;
-    Alert.alert('Use the cloud version?', 'This replaces the text currently on this device.', [
+    appAlert('Use the cloud version?', 'This replaces the text currently on this device.', [
       { text: 'Keep my draft', style: 'cancel' },
       { text: 'Use cloud version', style: 'destructive', onPress: async () => {
         await ensureLocalSaved();
@@ -324,11 +328,11 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
       await file.write(content);
       await Sharing.shareAsync(file.uri, { mimeType: asText ? 'text/plain' : 'text/markdown', dialogTitle: 'Export note' });
       setTimeout(() => { try { file.delete(); } catch { /* The OS can clear the cache later. */ } }, 60 * 60 * 1000);
-    } catch (error) { Alert.alert('Could not export note', (error as Error).message); }
+    } catch (error) { appAlert('Could not export note', (error as Error).message); }
   }
 
   function chooseExport() {
-    Alert.alert('Export note', 'Choose a UTF-8 file format.', [
+    appAlert('Export note', 'Choose a UTF-8 file format.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Markdown (.md)', onPress: () => { void exportNote(false); } },
       { text: 'Plain text (.txt)', onPress: () => { void exportNote(true); } },
@@ -351,8 +355,23 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
     if (pasted.body) bodyInput.current?.focus();
   }
 
-  function editBody(nextBody: string) {
+  function editBody(shownText: string) {
     const current = splitNote(latestDraft.current.content);
+    // The editor shows "• " for "- ". Turn what's on screen back into Markdown before storing it.
+    let nextBody = fromLive(shownText);
+    const stepped = backspaceOutdent(toLive(current.body), shownText);
+    const listed = stepped ? null : continueList(current.body, nextBody);
+    if (stepped) {
+      nextBody = fromLive(stepped.body);
+      pendingSelection.current = { field: 'body', selection: { start: stepped.cursor, end: stepped.cursor } };
+    } else if (listed) {
+      nextBody = listed.body;
+      pendingSelection.current = { field: 'body', selection: { start: listed.cursor, end: listed.cursor } };
+    } else if (toLive(nextBody) !== shownText) {
+      // A "- " was just typed and now shows as "• ": keep the caret right after it.
+      const caret = caretAfterEdit(current.body, nextBody);
+      pendingSelection.current = { field: 'body', selection: { start: caret, end: caret } };
+    }
     recordEdit(joinNote(current.title, nextBody), 'body', nextBody.length - current.body.length);
   }
 
@@ -360,7 +379,12 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
     const current = splitNote(latestDraft.current.content);
     const next = editMarkdown(current.body, selections.current.body, format);
     bodyInput.current?.focus();
-    if (next.body === current.body) return;
+    if (next.body === current.body) {
+      if (format === 'indent' || format === 'outdent') {
+        setStatus(format === 'indent' ? 'Put the cursor on a bullet below another bullet to make it a sub-point.' : 'Put the cursor on an indented bullet to move it out.');
+      }
+      return;
+    }
     pendingSelection.current = { field: 'body', selection: next.selection };
     recordEdit(joinNote(current.title, next.body), 'body');
   }
@@ -408,7 +432,7 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
   function removeNote() {
     if (busy) return;
     const dirtyCloudNote = Boolean(baseRevision && !status.startsWith('Saved to account'));
-    Alert.alert(dirtyCloudNote ? 'Delete and keep your draft?' : 'Delete this note?', dirtyCloudNote ? 'The account note will be deleted, and your unsent text will be kept as a separate device draft.' : 'This note will be removed from this device.', [
+    appAlert(dirtyCloudNote ? 'Delete and keep your draft?' : 'Delete this note?', dirtyCloudNote ? 'The account note will be deleted, and your unsent text will be kept as a separate device draft.' : 'This note will be removed from this device.', [
       { text: 'Cancel', style: 'cancel' },
       { text: dirtyCloudNote ? 'Delete and keep draft' : 'Delete', style: 'destructive', onPress: async () => {
         try {
@@ -419,7 +443,7 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
           const { removeNote } = await import('../../lib/storage');
           await removeNote(scope, id);
           leaveNote(() => router.back());
-        } catch (error) { Alert.alert('Could not delete note', (error as Error).message); }
+        } catch (error) { appAlert('Could not delete note', (error as Error).message); }
       } },
     ]);
   }
@@ -493,7 +517,7 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
                 <TextInput
                   ref={bodyInput}
                   onLayout={(event) => setBodyTop(event.nativeEvent.layout.y)}
-                  value={body}
+                  value={toLive(body)}
                   onChangeText={editBody}
                   onFocus={() => { activeField.current = 'body'; }}
                   onSelectionChange={(event) => { selections.current.body = event.nativeEvent.selection; }}
@@ -540,8 +564,9 @@ function NoteEditor({ id, accountId }: { id: string; accountId?: string }) {
                 <ToolbarButton icon="undo" label="Undo" disabled={!canUndo} onPress={() => stepHistory('undo')} />
                 <ToolbarButton icon="redo" label="Redo" disabled={!canRedo} onPress={() => stepHistory('redo')} />
                 <View style={[styles.toolDivider, { backgroundColor: colors.line }]} />
-                <ToolbarButton icon="bullet" label="Bullet list" text={showToolText ? 'Bullet' : undefined} onPress={() => formatSelection('bullet')} />
-                <ToolbarButton icon="table" label="Insert table" text={showToolText ? 'Table' : undefined} onPress={() => formatSelection('table')} />
+                <ToolbarButton icon="bullet" label="Bullet list" onPress={() => formatSelection('bullet')} />
+                <ToolbarButton icon="outdent" label="Move bullet out one level" onPress={() => formatSelection('outdent')} />
+                <ToolbarButton icon="indent" label="Make bullet a sub-point" onPress={() => formatSelection('indent')} />
                 <ToolbarButton icon="type" label="More formatting" active={formatBar} onPress={() => setFormatBar((open) => !open)} />
                 <View style={styles.spacer} />
               </>

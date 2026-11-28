@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Alert, AppState, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { AppState, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import * as Network from 'expo-network';
 import { router, useFocusEffect } from 'expo-router';
+import { appAlert } from './AppDialog';
 import { useAppTheme } from '../lib/theme';
 import { Icon, IconButton, Label, ThemeButton, Wordmark } from './chrome';
 import { OpeningScene } from './OpeningScene';
@@ -27,6 +28,9 @@ export function NoteLibrary({ activeId, onClose, onDeleteActive, onPick }: Libra
   const [refreshing, setRefreshing] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [opening, setOpening] = useState(!onClose);
+  // On startup the note opens only after the opening moment has played, so it never gets cut off mid-way.
+  const [introDone, setIntroDone] = useState(Boolean(onClose));
+  const finishIntro = useCallback(() => setIntroDone(true), []);
   const openedOnStartup = useRef(false);
   const refreshingScopes = useRef(new Set<string>());
   const [status, setStatus] = useState('');
@@ -113,7 +117,7 @@ export function NoteLibrary({ activeId, onClose, onDeleteActive, onPick }: Libra
   }, [onPick]);
 
   useEffect(() => {
-    if (onClose || !sessionReady || openedOnStartup.current) return;
+    if (onClose || !sessionReady || !introDone || openedOnStartup.current) return;
     let current = true;
     const openPrevious = async () => {
       const previousId = await getPreference(`active-note:${scope}`);
@@ -132,7 +136,7 @@ export function NoteLibrary({ activeId, onClose, onDeleteActive, onPick }: Libra
       setStatus('Could not open a device note. Try creating a new one.');
     });
     return () => { current = false; };
-  }, [onClose, openNote, scope, sessionReady]);
+  }, [onClose, openNote, scope, sessionReady, introDone]);
 
   async function createNote() {
     try {
@@ -149,7 +153,7 @@ export function NoteLibrary({ activeId, onClose, onDeleteActive, onPick }: Libra
     if (currentScope.current !== scope) return;
     if (!note) { setStatus('Could not find this note. Refresh your notes and try again.'); return; }
     const keepCopy = Boolean(note.revision && note.isDirty);
-    Alert.alert(keepCopy ? 'Delete and keep draft?' : 'Delete this note?', keepCopy ? 'The account note will be deleted and your unsent text will stay as a separate device draft.' : 'This note will be removed from this device.', [
+    appAlert(keepCopy ? 'Delete and keep draft?' : 'Delete this note?', keepCopy ? 'The account note will be deleted and your unsent text will stay as a separate device draft.' : 'This note will be removed from this device.', [
       { text: 'Cancel', style: 'cancel' },
       { text: keepCopy ? 'Delete and keep draft' : 'Delete', style: 'destructive', onPress: async () => {
         try {
@@ -162,7 +166,7 @@ export function NoteLibrary({ activeId, onClose, onDeleteActive, onPick }: Libra
           if (keepCopy) await cloneNote(scope, note);
           await removeStoredNote(scope, note.id);
           await refreshLocal();
-        } catch (error) { Alert.alert('Could not delete note', (error as Error).message); }
+        } catch (error) { appAlert('Could not delete note', (error as Error).message); }
       } },
     ]);
   }
@@ -174,7 +178,7 @@ export function NoteLibrary({ activeId, onClose, onDeleteActive, onPick }: Libra
 
   const visibleNotes = notes.filter((note) => note.scope === scope);
 
-  if (opening) return <OpeningScene />;
+  if (opening) return <OpeningScene onDone={finishIntro} />;
 
   return (
     <View style={[styles.surface, { backgroundColor: colors.sidebar }]}>

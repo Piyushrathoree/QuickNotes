@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View, type TextInputInstance, type TextInputProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, usePreventRemove } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -11,6 +11,7 @@ import { authClient, apiOrigin, invalidateLocalSession, cachedUserId, onSessionI
 import { finishGuestImport, getImportAttempt, listNotes, makeId, removeNote, setImportAttempt, setPreference } from '../lib/storage';
 import { saveCloudNote } from '../lib/cloud';
 import { ActionButton, BrandMark, IconButton, Label, PageHeader } from '../components/chrome';
+import { appAlert } from '../components/AppDialog';
 import { useAppTheme } from '../lib/theme';
 import { describeAuthError, EMAIL_PATTERN, MIN_PASSWORD_LENGTH } from '../../../../src/components/auth/errors';
 
@@ -35,7 +36,7 @@ export default function AccountScreen() {
   const [draftCount, setDraftCount] = useState(0);
   const [importing, setImporting] = useState(false);
   usePreventRemove(importing, () => {
-    Alert.alert('Import in progress', 'Keep this screen open until the guest import has finished.');
+    appAlert('Import in progress', 'Keep this screen open until the guest import has finished.');
   });
   useEffect(() => {
     verifySession().then(async (authUser) => {
@@ -74,6 +75,8 @@ export default function AccountScreen() {
       if (!authUser?.id) throw new Error('Your session could not be verified. Try signing in again.');
       setUser({ id: authUser.id, email: authUser.email ?? email }); setPassword(''); setMessage('Signed in.');
       setDraftCount((await listNotes(`account:${authUser.id}`)).filter((note) => note.isDirty).length);
+      // Back to the notes, which now show this account. Guest notes can still be imported from Account.
+      router.dismissTo('/');
     } catch (error) {
       const message = (error as Error).message;
       setMessage(/network|fetch|timeout/i.test(message) ? 'Could not reach the account service. Your device notes remain saved; try again when online.' : message || 'Could not complete sign in or signup. Check your details and try again.');
@@ -92,7 +95,7 @@ export default function AccountScreen() {
       const changedAttempt = sources.some((source, index) => attempts[index]?.destinationUserId === targetId && attempts[index]?.sourceSequence !== source.editedSeq);
       if ((foreignPin || changedAttempt) && !confirmedFreshIds) {
         setMessage(foreignPin ? 'Some guest notes have an unfinished import to another account.' : 'Some guest notes changed after an earlier import attempt.');
-        Alert.alert('Create fresh cloud copies?', 'A new UUID will be assigned only for these notes after your confirmation. Their guest copies stay here until matching cloud text is confirmed.', [
+        appAlert('Create fresh cloud copies?', 'A new UUID will be assigned only for these notes after your confirmation. Their guest copies stay here until matching cloud text is confirmed.', [
           { text: 'Keep on this device', style: 'cancel' }, { text: 'Create fresh copies', onPress: () => { void importGuest(true); } },
         ]);
         return;
@@ -129,12 +132,12 @@ export default function AccountScreen() {
   }
 
   function confirmImport() {
-    Alert.alert('Import guest notes?', 'Notes will be copied to this account one at a time. A guest note is removed only after its matching cloud copy is confirmed.', [
+    appAlert('Import guest notes?', 'Notes will be copied to this account one at a time. A guest note is removed only after its matching cloud copy is confirmed.', [
       { text: 'Keep on this device', style: 'cancel' }, { text: 'Import notes', onPress: () => { void importGuest(); } },
     ]);
   }
   function signOut() {
-    Alert.alert('Sign out?', 'Unsent account drafts stay private to this account on this device. Export or discard them below before leaving if you prefer.', [
+    appAlert('Sign out?', 'Unsent account drafts stay private to this account on this device. Export or discard them below before leaving if you prefer.', [
       { text: 'Cancel', style: 'cancel' }, { text: 'Sign out', style: 'destructive', onPress: async () => {
         try { await authClient.signOut(); } catch { /* Revoke may fail offline; remove local credentials below. */ }
         await setPreference('lastVerifiedUserId', '');
@@ -164,7 +167,7 @@ export default function AccountScreen() {
   }
   function discardAccountDrafts() {
     if (!user) return;
-    Alert.alert('Discard unsent drafts?', `This permanently removes ${draftCount} local account draft${draftCount === 1 ? '' : 's'}. Saved cloud notes are not affected.`, [
+    appAlert('Discard unsent drafts?', `This permanently removes ${draftCount} local account draft${draftCount === 1 ? '' : 's'}. Saved cloud notes are not affected.`, [
       { text: 'Cancel', style: 'cancel' }, { text: 'Discard drafts', style: 'destructive', onPress: async () => {
         const drafts = (await listNotes(`account:${user.id}`)).filter((note) => note.isDirty);
         for (const draft of drafts) await removeNote(`account:${user.id}`, draft.id);

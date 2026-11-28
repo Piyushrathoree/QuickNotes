@@ -10,6 +10,7 @@ const fonts = {
   Geist: require('../../assets/fonts/Geist-Regular.ttf'),
   GeistSemibold: require('../../assets/fonts/Geist-SemiBold.ttf'),
   PatrickHand: require('../../assets/fonts/PatrickHand-Regular.ttf'),
+  IBMPlexSerif: require('../../assets/fonts/IBMPlexSerif-Regular.ttf'),
 };
 
 const ThemeContext = createContext({
@@ -17,13 +18,15 @@ const ThemeContext = createContext({
   scheme: 'light' as 'light' | 'dark',
   colors: palette.light as (typeof palette)[keyof typeof palette],
   fontsReady: false,
+  appearanceReady: false,
   setAppearance: async (_value: Appearance) => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme() === 'dark' ? 'dark' : 'light';
   const [appearance, setAppearanceState] = useState<Appearance>('light');
-  const [fontsReady] = useFonts(fonts);
+  const [fontsReady, fontError] = useFonts(fonts);
+  const [appearanceReady, setAppearanceReady] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -31,7 +34,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (current && (value === 'light' || value === 'dark' || value === 'system')) {
         setAppearanceState(value);
       }
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => { if (current) setAppearanceReady(true); });
     return () => { current = false; };
   }, []);
 
@@ -42,7 +45,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const scheme = appearance === 'system' ? systemScheme : appearance;
   return (
-    <ThemeContext.Provider value={{ appearance, scheme, colors: palette[scheme], fontsReady, setAppearance }}>
+    <ThemeContext.Provider value={{ appearance, scheme, colors: palette[scheme], fontsReady: fontsReady && !fontError, appearanceReady: appearanceReady && (fontsReady || Boolean(fontError)), setAppearance }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -12,12 +12,47 @@ function lineEnd(body: string, position: number) {
 export function editMarkdown(
   body: string,
   selection: Selection,
-  format: 'bullet' | 'table' | 'heading' | 'task' | 'bold' | 'italic' | 'code' | 'link',
+  format: 'bullet' | 'table' | 'heading' | 'subheading' | 'task' | 'bold' | 'italic' | 'code' | 'link' | 'indent' | 'outdent',
 ) {
   const start = Math.max(0, Math.min(selection.start, body.length));
   const end = Math.max(start, Math.min(selection.end, body.length));
   const first = lineStart(body, start);
   const last = lineEnd(body, end > start && body[end - 1] === '\n' ? end - 1 : end);
+
+  if (format === 'indent' || format === 'outdent') {
+    const listLine = /^([ \t]*)([-*+]|\d{1,9}[.)]) /;
+    const stepFor = (line: string) => (/^[ \t]*\d/.test(line) ? 3 : 2);
+    const lines = body.slice(first, last).split('\n');
+    // A list item can only sit one level under the item above it, or Markdown reads it as a code block.
+    let previousIndent = -1;
+    if (first > 0) {
+      const above = body.slice(0, first - 1).split('\n').at(-1) ?? '';
+      const match = listLine.exec(above);
+      if (match) previousIndent = match[1].length;
+    }
+    let total = 0;
+    let firstDelta = 0;
+    const changed = lines.map((line, index) => {
+      const match = listLine.exec(line);
+      if (!match) { previousIndent = -1; return line; }
+      const indent = match[1].length;
+      const step = stepFor(line);
+      let delta = 0;
+      if (format === 'indent') {
+        if (previousIndent >= 0 && indent + step <= previousIndent + step && indent + step <= 8) delta = step;
+      } else delta = -Math.min(step, indent);
+      previousIndent = indent + delta;
+      if (index === 0) firstDelta = delta;
+      total += delta;
+      return delta > 0 ? ' '.repeat(delta) + line : line.slice(-delta);
+    });
+    if (!total && !firstDelta) return { body, selection: { start, end } };
+    const nextStart = Math.max(first, start + firstDelta);
+    return {
+      body: body.slice(0, first) + changed.join('\n') + body.slice(last),
+      selection: { start: nextStart, end: Math.max(nextStart, end + total) },
+    };
+  }
 
   if (format === 'table') {
     // Insert after the current block, including when the cursor is inside an existing table.
@@ -34,10 +69,12 @@ export function editMarkdown(
     return { body: before + prefix + template + suffix + after, selection: { start: cell, end: cell + 8 } };
   }
 
-  if (format === 'bullet' || format === 'task' || format === 'heading') {
-    const prefix = format === 'bullet' ? '- ' : format === 'task' ? '- [ ] ' : '# ';
+  if (format === 'bullet' || format === 'task' || format === 'heading' || format === 'subheading') {
+    const prefix = format === 'bullet' ? '- ' : format === 'task' ? '- [ ] ' : format === 'heading' ? '# ' : '## ';
+    const headingLevel = format === 'heading' ? /^(\s*)# +/ : /^(\s*)## +/;
+    const anyHeading = /^(\s*)#{1,6} +/;
     const lines = body.slice(first, last).split('\n');
-    const marker = format === 'bullet' ? /^(\s*)[-*+] +(?! |\[[ xX]\] )/ : format === 'task' ? /^(\s*)[-*+] +\[[ xX]\] +/ : /^(\s*)#{1,6} +/;
+    const marker = format === 'bullet' ? /^(\s*)[-*+] +(?! |\[[ xX]\] )/ : format === 'task' ? /^(\s*)[-*+] +\[[ xX]\] +/ : headingLevel;
     const taskMarker = /^(\s*)[-*+] +\[[ xX]\] +/;
     const bulletMarker = /^(\s*)[-*+] +/;
     const remove = lines.every((line) => marker.test(line));
@@ -46,6 +83,8 @@ export function editMarkdown(
       if (marker.test(line) || (!line.trim() && lines.length > 1)) return line;
       if (format === 'bullet' && taskMarker.test(line)) return line.replace(taskMarker, '$1- ');
       if (format === 'task' && bulletMarker.test(line)) return line.replace(bulletMarker, '$1- [ ] ');
+      // A heading of the other level switches level instead of stacking markers.
+      if ((format === 'heading' || format === 'subheading') && anyHeading.test(line)) return line.replace(anyHeading, `$1${prefix}`);
       return line.replace(/^[ \t]*/, (indent) => indent + prefix);
     }).join('\n');
     const nextStart = end === start
